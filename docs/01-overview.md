@@ -15,7 +15,7 @@ out the other side are the same documents an auditor expects.
 | Portal | Who | What they do |
 | --- | --- | --- |
 | **Owner** | Platform super-admin | Onboard and pause schools and suppliers, review subscription payments, manage branding assets |
-| **School** | Principal, Property Custodian, BAC, Disbursing Officer | PR → approval → PO → receipt → DV → cheque → 2307 |
+| **School** | Principal | PR → approval → PO → receipt → DV → cheque → 2307 |
 | **Supplier** | Supplier Owner and employees | Catalog and markup pricing, accept and dispatch POs, download cheque photos and 2307s |
 
 All three run from one codebase against one Supabase project. Tenants are separated by
@@ -28,5 +28,9 @@ Row Level Security, never by separate deployments — see `02-database-schema-an
   The screen is how you get there.
 - **Roles are narrow on purpose.** A user sees only the actions their role can take at the
   order's current step; everything else is absent, not disabled-with-a-tooltip.
+- **One login per organisation, not per officer.** A school is a single Principal account.
+  The Custodian, BAC and Disbursing Officer who sign the paper are named per document in
+  the template customiser — they are signatories, not users, so onboarding a school means
+  creating one account rather than four.
 - **Numbers are never re-keyed.** The markup a supplier sets flows into the PR, the PR total
   flows into the PO, the PO total drives the DV withholding, and the DV drives the 2307.

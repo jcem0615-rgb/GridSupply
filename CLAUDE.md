@@ -12,8 +12,9 @@ capture in the field.
 ## Three portals, one codebase
 1. **Owner Portal** — platform super-admin: school/supplier account management, branding
    asset uploads, subscription payment approval queue.
-2. **School Portal** — Principal / Property Custodian / BAC / Disbursing Officer: PR/PO/DV
-   creation, print template customisation, cheque photo capture.
+2. **School Portal** — a single Principal account per school: PR/PO/DV creation, print
+   template customisation, cheque photo capture. The Custodian, BAC and Disbursing Officer
+   are document signatories, not users.
 3. **Supplier Portal** — Supplier Owner + employee sub-accounts: catalog, markup pricing,
    tax preview, cheque/2307 downloads, subscription fee payment.
 
@@ -61,6 +62,10 @@ you have not broken the critical path.
 - **Auth wiring** — `handle_new_user()` builds the `profiles` row from invite metadata.
   Admin-invite only; no self-service sign-up, which is correct for closed procurement.
 - **Print customiser** — slot-based, not free drag-and-drop. Reasoning in `docs/08`.
+- **One school login** — the `custodian`, `bac` and `disbursing` roles were removed and
+  their permissions folded into `principal`. Separation of duties is now documented on the
+  printed output (per-template signatories) rather than enforced by the software; see the
+  trade-off note in `docs/04`. Dexie v2 drops the retired profiles from existing browsers.
 
 ## Open items
 - **Supabase project is not provisioned.** The app runs local-first against IndexedDB; wire

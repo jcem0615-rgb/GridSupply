@@ -3,6 +3,9 @@
  * across all three portals, then exercises catalog pricing, subscription
  * review, the template customiser and the mobile layout.
  *
+ * The school side is one Principal account, so every school step is driven by
+ * the same login; only the supplier hand-offs switch users.
+ *
  *   npm run build && npm run preview &
  *   npm run smoke
  *
@@ -47,8 +50,8 @@ try {
     await page.waitForSelector('text=Demo accounts')
   })
 
-  await step('custodian creates a PR', async () => {
-    await signInAs('Roberto Santos')
+  await step('principal creates a PR', async () => {
+    await signInAs('Dr. Elena Villanueva')
     await page.goto(BASE + '/school/new')
     await page.getByPlaceholder(/Supplies for the 2nd quarter/).fill('Supplies for the 2nd quarter examinations')
     await page.locator('select').nth(1).selectOption({ index: 1 })
@@ -69,21 +72,17 @@ try {
   const orderUrl = page.url()
   console.log('  order:', orderUrl.replace(BASE, ''))
 
-  await step('custodian submits to principal', async () => {
-    await page.getByRole('button', { name: 'Submit to Principal' }).click()
-    await page.waitForSelector('text=Awaiting Principal')
+  await step('principal submits the PR for approval', async () => {
+    await page.getByRole('button', { name: 'Submit for approval' }).click()
+    await page.waitForSelector('text=Awaiting Approval')
   })
 
   await step('principal approves', async () => {
-    await signOut(); await signInAs('Dr. Elena Villanueva')
-    await page.goto(orderUrl)
     await page.getByRole('button', { name: 'Approve request' }).click()
     await page.waitForSelector('text=PR Approved')
   })
 
-  await step('BAC issues PO', async () => {
-    await signOut(); await signInAs('Aileen Mercado')
-    await page.goto(orderUrl)
+  await step('principal issues PO', async () => {
     await page.getByRole('button', { name: 'Issue Purchase Order' }).click()
     await page.waitForSelector('text=PO Issued')
   })
@@ -105,23 +104,21 @@ try {
     await page.waitForSelector('text=Delivery arriving before noon today.')
   })
 
-  await step('custodian signs the IAR', async () => {
-    await signOut(); await signInAs('Roberto Santos')
+  await step('principal signs the IAR', async () => {
+    await signOut(); await signInAs('Dr. Elena Villanueva')
     await page.goto(orderUrl)
     await page.getByRole('button', { name: 'Receive & sign IAR' }).click()
-    await page.getByPlaceholder('Roberto Santos').fill('Roberto Santos')
+    await page.getByPlaceholder('Dr. Elena Villanueva').fill('Dr. Elena Villanueva')
     await page.getByRole('button', { name: 'Sign IAR & accept delivery' }).click()
     await page.waitForSelector('text=Delivered / IAR Signed')
   })
 
-  await step('disbursing officer issues DV', async () => {
-    await signOut(); await signInAs('Ferdinand Lim')
-    await page.goto(orderUrl)
+  await step('principal issues the DV', async () => {
     await page.getByRole('button', { name: 'Generate Disbursement Voucher' }).click()
     await page.waitForSelector('text=DV Issued')
   })
 
-  await step('disbursing officer records the cheque', async () => {
+  await step('principal records the cheque', async () => {
     await page.getByRole('button', { name: 'Record cheque payment' }).click()
     await page.getByPlaceholder('0012345').fill('0098765')
     await page.getByRole('button', { name: 'Record payment' }).click()

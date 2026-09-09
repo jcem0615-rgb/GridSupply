@@ -11,19 +11,21 @@ npm install
 npm run dev
 ```
 
-Open the app and pick any of the seven demo accounts on the login screen. No backend is
+Open the app and pick any of the four demo accounts on the login screen. No backend is
 required: the app is local-first and seeds a test school, a test supplier and a catalog into
 IndexedDB on first boot.
 
 Try the full loop in about two minutes:
 
-1. **Roberto Santos** (Property Custodian) → New PR → pick items → save → submit
-2. **Dr. Elena Villanueva** (Principal) → approve
-3. **Aileen Mercado** (BAC) → issue Purchase Order
-4. **Marites Delos Reyes** (Supplier) → accept → dispatch
-5. **Roberto Santos** → receive & sign the IAR
-6. **Ferdinand Lim** (Disbursing Officer) → generate DV → record cheque → issue BIR 2307
-7. Open the **Documents** tab at any point to print the PR, PO, IAR, DV or 2307
+1. **Dr. Elena Villanueva** (School Principal) → New PR → pick items → save → submit → approve
+2. → issue Purchase Order
+3. **Marites Delos Reyes** (Supplier) → accept → dispatch
+4. **Dr. Elena Villanueva** → receive & sign the IAR → generate DV → record cheque → issue BIR 2307
+5. Open the **Documents** tab at any point to print the PR, PO, IAR, DV or 2307
+
+The school side is one Principal account. The Property Custodian, BAC Chairperson and
+Disbursing Officer still appear on the printed documents as signatories — configured per
+template under **Templates** — but they are names on paper, not logins.
 
 ## Wiring a real backend
 

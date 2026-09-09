@@ -7,9 +7,11 @@ create extension if not exists "pgcrypto";
 -- ─────────────────────────────────────────────────────────────
 -- Enums
 -- ─────────────────────────────────────────────────────────────
+-- The school side is a single Principal account; separation of duties is
+-- expressed on the printed documents via print_templates.signatories, not by
+-- giving every officer a login.
 create type user_role as enum (
-  'owner', 'principal', 'custodian', 'bac', 'disbursing',
-  'supplier_owner', 'supplier_employee'
+  'owner', 'principal', 'supplier_owner', 'supplier_employee'
 );
 
 create type account_status as enum ('active', 'paused', 'stopped');
@@ -69,7 +71,7 @@ create table profiles (
   -- A profile belongs to exactly one tenant, except the platform owner.
   constraint profile_tenant_exclusive check (
     (role = 'owner' and school_id is null and supplier_id is null)
-    or (role in ('principal','custodian','bac','disbursing') and school_id is not null and supplier_id is null)
+    or (role = 'principal' and school_id is not null and supplier_id is null)
     or (role in ('supplier_owner','supplier_employee') and supplier_id is not null and school_id is null)
   )
 );
@@ -320,7 +322,7 @@ create policy orders_select on orders for select using (
   )
 );
 create policy orders_school_insert on orders for insert with check (
-  school_id = auth_school_id() and auth_role() in ('custodian', 'bac')
+  school_id = auth_school_id() and auth_role() = 'principal'
 );
 create policy orders_school_update on orders for update
   using (school_id = auth_school_id())
@@ -372,7 +374,7 @@ create policy templates_select on print_templates for select using (
   is_owner() or school_id = auth_school_id()
 );
 create policy templates_write on print_templates for all
-  using (school_id = auth_school_id() and auth_role() in ('principal', 'custodian'))
+  using (school_id = auth_school_id() and auth_role() = 'principal')
   with check (school_id = auth_school_id());
 
 -- ─────────────────────────────────────────────────────────────
@@ -434,7 +436,7 @@ begin
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data ->> 'full_name', ''),
-    coalesce((new.raw_user_meta_data ->> 'role')::user_role, 'custodian'),
+    coalesce((new.raw_user_meta_data ->> 'role')::user_role, 'principal'),
     nullif(new.raw_user_meta_data ->> 'school_id', '')::uuid,
     nullif(new.raw_user_meta_data ->> 'supplier_id', '')::uuid,
     new.raw_user_meta_data ->> 'position_title'

@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useAuth } from './store/auth'
-import { ROLE_PORTAL, type Portal } from './types'
+import { ROLE_PORTAL, isKnownRole, type Portal } from './types'
 import { Layout } from './components/Layout'
 import { LoginPage } from './features/auth/LoginPage'
 import { SchoolDashboard } from './features/school/SchoolDashboard'
@@ -23,7 +23,9 @@ import { startSyncLoop } from './lib/sync'
 function Guard({ portal, children }: { portal: Portal; children: React.ReactNode }) {
   const profile = useAuth((s) => s.profile)
   const location = useLocation()
-  if (!profile) return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  if (!profile || !isKnownRole(profile.role)) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  }
   const mine = ROLE_PORTAL[profile.role]
   if (mine !== portal) return <Navigate to={`/${mine}`} replace />
   return <Layout>{children}</Layout>
@@ -31,7 +33,7 @@ function Guard({ portal, children }: { portal: Portal; children: React.ReactNode
 
 function AnyPortal({ children }: { children: React.ReactNode }) {
   const profile = useAuth((s) => s.profile)
-  if (!profile) return <Navigate to="/login" replace />
+  if (!profile || !isKnownRole(profile.role)) return <Navigate to="/login" replace />
   return <Layout>{children}</Layout>
 }
 
@@ -42,6 +44,9 @@ export default function App() {
   useEffect(() => {
     void (async () => {
       await seedIfEmpty()
+      /* A session persisted by an older build may name a retired role. */
+      const current = useAuth.getState().profile
+      if (current && !isKnownRole(current.role)) await useAuth.getState().signOut()
       startSyncLoop()
       setReady(true)
     })()
@@ -57,7 +62,16 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/login" element={profile ? <Navigate to={`/${ROLE_PORTAL[profile.role]}`} replace /> : <LoginPage />} />
+      <Route
+        path="/login"
+        element={
+          profile && isKnownRole(profile.role) ? (
+            <Navigate to={`/${ROLE_PORTAL[profile.role]}`} replace />
+          ) : (
+            <LoginPage />
+          )
+        }
+      />
 
       <Route path="/school" element={<Guard portal="school"><SchoolDashboard /></Guard>} />
       <Route path="/school/orders" element={<Guard portal="school"><SchoolOrders /></Guard>} />
@@ -76,7 +90,12 @@ export default function App() {
 
       <Route path="/orders/:id" element={<AnyPortal><OrderDetail /></AnyPortal>} />
 
-      <Route path="*" element={<Navigate to={profile ? `/${ROLE_PORTAL[profile.role]}` : '/login'} replace />} />
+      <Route
+        path="*"
+        element={
+          <Navigate to={profile && isKnownRole(profile.role) ? `/${ROLE_PORTAL[profile.role]}` : '/login'} replace />
+        }
+      />
     </Routes>
   )
 }

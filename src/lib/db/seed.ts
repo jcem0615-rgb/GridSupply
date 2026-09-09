@@ -59,9 +59,6 @@ const profile = (
 export const SEED_PROFILES: Profile[] = [
   profile('p-owner', 'owner@gridsupply.ph', 'Jose Cruz', 'owner', 'Platform Administrator', null, null),
   profile('p-principal', 'principal@bses.deped.gov.ph', 'Dr. Elena Villanueva', 'principal', 'School Principal IV', SCHOOL_ID, null),
-  profile('p-custodian', 'custodian@bses.deped.gov.ph', 'Roberto Santos', 'custodian', 'Property Custodian', SCHOOL_ID, null),
-  profile('p-bac', 'bac@bses.deped.gov.ph', 'Aileen Mercado', 'bac', 'BAC Chairperson', SCHOOL_ID, null),
-  profile('p-disbursing', 'disbursing@bses.deped.gov.ph', 'Ferdinand Lim', 'disbursing', 'Disbursing Officer', SCHOOL_ID, null),
   profile('p-supplier-owner', 'marites@northgate.ph', 'Marites Delos Reyes', 'supplier_owner', 'Proprietor', null, SUPPLIER_ID),
   profile('p-supplier-emp', 'jayson@northgate.ph', 'Jayson Bautista', 'supplier_employee', 'Sales Associate', null, SUPPLIER_ID),
 ]

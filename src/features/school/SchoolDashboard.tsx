@@ -17,13 +17,18 @@ function greetingName(fullName: string) {
   return first ?? fullName
 }
 
-/** Statuses that are this role's move to make. */
-const INBOX: Partial<Record<string, OrderStatus[]>> = {
-  principal: ['pr_submitted'],
-  custodian: ['draft', 'dispatched'],
-  bac: ['pr_approved'],
-  disbursing: ['delivered', 'dv_issued'],
-}
+/**
+ * Statuses waiting on the school. The school side is one Principal account,
+ * so every step that is not the supplier's move belongs in this queue.
+ */
+const SCHOOL_INBOX: OrderStatus[] = [
+  'draft',
+  'pr_submitted',
+  'pr_approved',
+  'dispatched',
+  'delivered',
+  'dv_issued',
+]
 
 export function SchoolDashboard() {
   const profile = useAuth((s) => s.profile)!
@@ -33,7 +38,7 @@ export function SchoolDashboard() {
     [],
   )
 
-  const waiting = (orders ?? []).filter((o) => (INBOX[profile.role] ?? []).includes(o.status))
+  const waiting = (orders ?? []).filter((o) => SCHOOL_INBOX.includes(o.status))
   const active = (orders ?? []).filter((o) => !['archived', 'paid', 'pr_rejected', 'po_declined'].includes(o.status))
   const committed = active.reduce((s, o) => s + o.gross_total, 0)
   const paidThisYear = (orders ?? [])

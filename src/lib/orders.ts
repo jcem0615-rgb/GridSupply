@@ -201,7 +201,7 @@ export async function patchOrder(
 }
 
 export const submitPR = (id: string, a: Profile) =>
-  patchOrder(id, a, {}, 'pr_submitted', `PR submitted to the Principal for approval.`)
+  patchOrder(id, a, {}, 'pr_submitted', `PR submitted for approval.`)
 
 export const approvePR = (id: string, a: Profile) =>
   patchOrder(

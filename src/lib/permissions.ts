@@ -1,20 +1,28 @@
 import type { OrderStatus, Role } from '../types'
 
-/** Every guarded action in the app, mapped to the roles allowed to perform it. */
+/**
+ * Every guarded action in the app, mapped to the roles allowed to perform it.
+ *
+ * The school side is a single Principal account: one login performs every
+ * school-side step. Separation of duties lives on the printed documents
+ * instead — each template names its own signatories (docs/08), so a DV can
+ * still be certified by a named Disbursing Officer without that person
+ * needing an account.
+ */
 export const PERMISSIONS = {
-  'pr.create': ['custodian', 'bac'],
-  'pr.edit': ['custodian', 'bac'],
-  'pr.submit': ['custodian', 'bac'],
+  'pr.create': ['principal'],
+  'pr.edit': ['principal'],
+  'pr.submit': ['principal'],
   'pr.approve': ['principal'],
   'pr.reject': ['principal'],
-  'po.issue': ['bac', 'principal'],
+  'po.issue': ['principal'],
   'po.accept': ['supplier_owner', 'supplier_employee'],
   'po.decline': ['supplier_owner'],
   'delivery.dispatch': ['supplier_owner', 'supplier_employee'],
-  'delivery.receive': ['custodian'],
-  'dv.issue': ['disbursing'],
-  'check.capture': ['disbursing'],
-  'bir2307.issue': ['disbursing'],
+  'delivery.receive': ['principal'],
+  'dv.issue': ['principal'],
+  'check.capture': ['principal'],
+  'bir2307.issue': ['principal'],
   'catalog.manage': ['supplier_owner', 'supplier_employee'],
   'catalog.pricing': ['supplier_owner'],
   'supplier.staff': ['supplier_owner'],
@@ -22,16 +30,8 @@ export const PERMISSIONS = {
   'subscription.review': ['owner'],
   'accounts.manage': ['owner'],
   'branding.manage': ['owner'],
-  'template.customize': ['principal', 'custodian'],
-  'chat.post': [
-    'principal',
-    'custodian',
-    'bac',
-    'disbursing',
-    'supplier_owner',
-    'supplier_employee',
-    'owner',
-  ],
+  'template.customize': ['principal'],
+  'chat.post': ['principal', 'supplier_owner', 'supplier_employee', 'owner'],
 } as const satisfies Record<string, readonly Role[]>
 
 export type Permission = keyof typeof PERMISSIONS

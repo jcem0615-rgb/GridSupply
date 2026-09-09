@@ -15,7 +15,9 @@ Per school, per document type (`PR`, `PO`, `IAR`, `DV`, `BIR2307`):
 
 - **Header lines** — free-text, add and remove; defaults to the DepEd four-line letterhead
 - **Seal / logo** — uploaded image, downscaled client-side, toggleable
-- **Signatory blocks** — label, name, position; a blank name prints a ruled signature line
+- **Signatory blocks** — label, name, position; a blank name prints a ruled signature line.
+  This is where the Property Custodian, BAC Chairperson and Disbursing Officer appear: the
+  app has one school login, but the paper still names the officer who signs each block
 - **Footer note**
 
 The customiser renders the real `PrintDoc` component against a specimen order, so the

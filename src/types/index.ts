@@ -1,32 +1,24 @@
 /** Domain model for GridSupply. Mirrors supabase/schema.sql one-for-one. */
 
-export type Role =
-  | 'owner'
-  | 'principal'
-  | 'custodian'
-  | 'bac'
-  | 'disbursing'
-  | 'supplier_owner'
-  | 'supplier_employee'
+export type Role = 'owner' | 'principal' | 'supplier_owner' | 'supplier_employee'
 
 export type Portal = 'owner' | 'school' | 'supplier'
 
 export const ROLE_PORTAL: Record<Role, Portal> = {
   owner: 'owner',
   principal: 'school',
-  custodian: 'school',
-  bac: 'school',
-  disbursing: 'school',
   supplier_owner: 'supplier',
   supplier_employee: 'supplier',
+}
+
+/** A persisted session from an older build may name a role that no longer exists. */
+export function isKnownRole(role: string | undefined): role is Role {
+  return !!role && role in ROLE_PORTAL
 }
 
 export const ROLE_LABEL: Record<Role, string> = {
   owner: 'Platform Owner',
   principal: 'School Principal',
-  custodian: 'Property Custodian',
-  bac: 'BAC Chairperson',
-  disbursing: 'Disbursing Officer',
   supplier_owner: 'Supplier Owner',
   supplier_employee: 'Supplier Employee',
 }
@@ -120,7 +112,7 @@ export const ORDER_FLOW: OrderStatus[] = [
 
 export const STATUS_LABEL: Record<OrderStatus, string> = {
   draft: 'Draft PR',
-  pr_submitted: 'Awaiting Principal',
+  pr_submitted: 'Awaiting Approval',
   pr_approved: 'PR Approved',
   pr_rejected: 'PR Rejected',
   po_issued: 'PO Issued',

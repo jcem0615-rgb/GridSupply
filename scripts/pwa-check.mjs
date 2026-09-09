@@ -27,7 +27,7 @@ const manifest = await p.evaluate(async () => (await fetch('/manifest.webmanifes
 console.log('✓ manifest:', manifest.name, '| display:', manifest.display, '| icons:', manifest.icons.length)
 
 // sign in and create data while online
-await p.getByRole('button', { name: /Roberto Santos/ }).click()
+await p.getByRole('button', { name: /Dr. Elena Villanueva/ }).click()
 await p.waitForURL(/school/)
 console.log('✓ signed in')
 

@@ -55,6 +55,20 @@ export class GridSupplyDB extends Dexie {
       print_templates: 'id, school_id, doc_type',
       outbox: '++id, client_uuid, table, synced_at, created_at',
     })
+
+    /**
+     * v2 collapsed the school side onto a single Principal account. A browser
+     * carrying a v1 database still holds the retired officer profiles, and the
+     * login screen renders straight from this table — so drop them here rather
+     * than leaving dead accounts that can no longer act on anything.
+     */
+    this.version(2).upgrade(async (tx) => {
+      const retired = ['custodian', 'bac', 'disbursing']
+      await tx
+        .table('profiles')
+        .filter((p: { role: string }) => retired.includes(p.role))
+        .delete()
+    })
   }
 }
 

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../lib/db/dexie'
 import { useAuth } from '../../store/auth'
-import { canActNow } from '../../lib/permissions'
+import { can, canActNow } from '../../lib/permissions'
 import {
   acceptPO,
   approvePR,
@@ -52,7 +52,7 @@ export function OrderActions({ order }: { order: Order }) {
   if (allow('pr.submit'))
     actions.push(
       <Button key="submit" onClick={() => run(() => submitPR(order.id, profile))} disabled={busy} full>
-        Submit to Principal
+        Submit for approval
       </Button>,
     )
   if (allow('pr.approve'))
@@ -122,7 +122,7 @@ export function OrderActions({ order }: { order: Order }) {
         Issue BIR Form 2307
       </Button>,
     )
-  if (order.status === 'paid' && order.bir_2307_issued && profile.role === 'disbursing')
+  if (order.status === 'paid' && order.bir_2307_issued && can(profile.role, 'bir2307.issue'))
     actions.push(
       <Button key="archive" variant="secondary" onClick={() => run(() => archiveOrder(order.id, profile))} full>
         Archive transaction
