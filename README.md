@@ -86,6 +86,27 @@ npm run build && npm run preview &
 npm run smoke && npm run pwa-check
 ```
 
+## Deployment
+
+The production branch is `claude/gridsupply-pwa-app-kzge42`; Vercel builds and deploys on
+every push to it. `vercel.json` carries the whole configuration, so an import needs no
+manual settings:
+
+- **SPA rewrites** so a hard refresh on `/school` or `/orders/:id` serves the app rather
+  than a 404. Rewrites apply only after a filesystem miss, so hashed assets, `sw.js` and
+  the manifest are still served directly.
+- **`sw.js` as `must-revalidate`** — a long-cached service worker would pin visitors to a
+  stale build, which is the usual way a PWA gets wedged. Hashed assets get the opposite:
+  immutable, one year.
+- **`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` on install**, because `playwright` is a
+  devDependency used only by `npm run smoke` and `npm run pwa-check`. Without it every
+  build downloads several hundred MB of browsers it never launches.
+
+Node is pinned to 22.x via `engines` and `.nvmrc`; Vite 8 requires `^20.19 || >=22.12`.
+
+Note that Vercel only builds on pushes made *after* the Git connection exists — connecting
+the repository does not retroactively deploy the commits already on the branch.
+
 ## Status
 
 Phases 0–8 of the build order are implemented. Known follow-ups are listed in `CLAUDE.md`.
