@@ -1,0 +1,68 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-ink-50: #f4f7f5;
+  --color-ink-100: #e4ebe7;
+  --color-ink-200: #c7d6ce;
+  --color-ink-400: #6f8a7d;
+  --color-ink-600: #33604c;
+  --color-ink-700: #204a38;
+  --color-ink-800: #16382a;
+  --color-ink-900: #0f3d2e;
+  --color-brand: #0f3d2e;
+  --color-brand-soft: #e7f0ea;
+  --color-accent: #c2701c;
+  --color-accent-soft: #fdf1e3;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+:root {
+  color-scheme: light;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #f6f7f6;
+  color: #16382a;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+/* Print: only the document being printed survives. */
+@media print {
+  body {
+    background: #fff;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+}
+
+.scroll-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: #c7d6ce;
+  border-radius: 999px;
+}

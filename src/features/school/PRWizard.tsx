@@ -1,0 +1,240 @@
+import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '../../lib/db/dexie'
+import { useAuth } from '../../store/auth'
+import { peso, round2 } from '../../lib/money'
+import { createPR, type DraftLine } from '../../lib/orders'
+import { Button, Card, Empty, Field, Input, Select, Textarea, cx } from '../../components/ui'
+import { can } from '../../lib/permissions'
+import type { CatalogItem } from '../../types'
+
+const FUND_SOURCES = ['MOOE', 'School MOOE — Downloaded', 'Special Education Fund (SEF)', 'Canteen Fund', 'PTA Fund']
+
+const STEPS = ['Details', 'Items', 'Review'] as const
+
+export function PRWizard() {
+  const profile = useAuth((s) => s.profile)!
+  const navigate = useNavigate()
+  const [step, setStep] = useState(0)
+  const [purpose, setPurpose] = useState('')
+  const [fundSource, setFundSource] = useState(FUND_SOURCES[0])
+  const [supplierId, setSupplierId] = useState('')
+  const [qty, setQty] = useState<Record<string, number>>({})
+  const [search, setSearch] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const suppliers = useLiveQuery(() => db.suppliers.filter((s) => s.status === 'active').toArray(), [], [])
+  const catalog = useLiveQuery(
+    async (): Promise<CatalogItem[]> =>
+      supplierId ? db.catalog_items.where('supplier_id').equals(supplierId).toArray() : [],
+    [supplierId],
+    [] as CatalogItem[],
+  )
+
+  const visible = useMemo(
+    () => (catalog ?? []).filter((c) => c.active && c.name.toLowerCase().includes(search.toLowerCase())),
+    [catalog, search],
+  )
+
+  const lines: DraftLine[] = useMemo(
+    () =>
+      (catalog ?? [])
+        .filter((c) => (qty[c.id] ?? 0) > 0)
+        .map((c) => ({
+          catalog_item_id: c.id,
+          name: c.name,
+          description: c.description,
+          unit: c.unit,
+          qty: qty[c.id],
+          unit_price: c.selling_price,
+        })),
+    [catalog, qty],
+  )
+
+  const total = round2(lines.reduce((s, l) => s + l.qty * l.unit_price, 0))
+
+  if (!can(profile.role, 'pr.create')) {
+    return <Empty title="Not your step" hint="Only the Property Custodian or BAC can draft a Purchase Request." />
+  }
+
+  const canAdvance = step === 0 ? purpose.trim().length > 3 && !!supplierId : step === 1 ? lines.length > 0 : true
+
+  const save = async () => {
+    setSaving(true)
+    const order = await createPR(profile, { supplier_id: supplierId, purpose, fund_source: fundSource, lines })
+    setSaving(false)
+    navigate(`/orders/${order.id}`)
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-xl font-black tracking-tight text-ink-900">New Purchase Request</h1>
+        <p className="text-sm text-ink-400">Saved on this device as you go — safe to fill in without signal.</p>
+      </div>
+
+      <ol className="flex items-center gap-2">
+        {STEPS.map((s, i) => (
+          <li key={s} className="flex flex-1 items-center gap-2">
+            <span
+              className={cx(
+                'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold',
+                i <= step ? 'bg-brand text-white' : 'bg-ink-100 text-ink-400',
+              )}
+            >
+              {i + 1}
+            </span>
+            <span className={cx('text-xs font-semibold', i <= step ? 'text-ink-900' : 'text-ink-400')}>{s}</span>
+            {i < STEPS.length - 1 && <span className="h-px flex-1 bg-ink-200" />}
+          </li>
+        ))}
+      </ol>
+
+      {step === 0 && (
+        <Card title="Request details">
+          <div className="space-y-4">
+            <Field label="Purpose" hint="Written onto the printed PR — be specific enough for the auditor.">
+              <Textarea
+                value={purpose}
+                onChange={(e) => setPurpose(e.target.value)}
+                placeholder="Supplies for the 2nd quarter examinations and classroom operations"
+              />
+            </Field>
+            <Field label="Fund source">
+              <Select value={fundSource} onChange={(e) => setFundSource(e.target.value)}>
+                {FUND_SOURCES.map((f) => (
+                  <option key={f}>{f}</option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Supplier">
+              <Select value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
+                <option value="">Select a supplier…</option>
+                {(suppliers ?? []).map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          </div>
+        </Card>
+      )}
+
+      {step === 1 && (
+        <Card title="Items" subtitle={`${lines.length} selected · ${peso(total)}`}>
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search the supplier's catalog…"
+            className="mb-4"
+          />
+          {visible.length === 0 ? (
+            <Empty title="No catalog items" hint="This supplier has not published any active items yet." />
+          ) : (
+            <ul className="divide-y divide-ink-100">
+              {visible.map((c) => (
+                <li key={c.id} className="flex items-center gap-3 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-ink-900">{c.name}</p>
+                    <p className="truncate text-xs text-ink-400">
+                      {peso(c.selling_price)} / {c.unit} · {c.description}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setQty((q) => ({ ...q, [c.id]: Math.max(0, (q[c.id] ?? 0) - 1) }))}
+                      className="h-8 w-8 rounded-lg border border-ink-200 text-sm font-bold text-ink-600"
+                      aria-label={`Decrease ${c.name}`}
+                    >
+                      −
+                    </button>
+                    <input
+                      inputMode="numeric"
+                      value={qty[c.id] ?? 0}
+                      onChange={(e) =>
+                        setQty((q) => ({ ...q, [c.id]: Math.max(0, Number(e.target.value.replace(/\D/g, '')) || 0) }))
+                      }
+                      className="h-8 w-12 rounded-lg border border-ink-200 text-center text-sm font-bold tabular-nums"
+                      aria-label={`Quantity of ${c.name}`}
+                    />
+                    <button
+                      onClick={() => setQty((q) => ({ ...q, [c.id]: (q[c.id] ?? 0) + 1 }))}
+                      className="h-8 w-8 rounded-lg border border-ink-200 text-sm font-bold text-ink-600"
+                      aria-label={`Increase ${c.name}`}
+                    >
+                      +
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      )}
+
+      {step === 2 && (
+        <Card title="Review" subtitle="This becomes PR document once submitted">
+          <dl className="mb-4 grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <dt className="text-xs font-semibold uppercase text-ink-400">Purpose</dt>
+              <dd className="text-ink-900">{purpose}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold uppercase text-ink-400">Fund source</dt>
+              <dd className="text-ink-900">{fundSource}</dd>
+            </div>
+          </dl>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-ink-200 text-left text-xs uppercase text-ink-400">
+                  <th className="py-2">Item</th>
+                  <th className="py-2 text-right">Qty</th>
+                  <th className="py-2 text-right">Unit price</th>
+                  <th className="py-2 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lines.map((l) => (
+                  <tr key={l.name} className="border-b border-ink-100">
+                    <td className="py-2 text-ink-900">{l.name}</td>
+                    <td className="py-2 text-right tabular-nums">{l.qty} {l.unit}</td>
+                    <td className="py-2 text-right tabular-nums">{peso(l.unit_price)}</td>
+                    <td className="py-2 text-right font-semibold tabular-nums">{peso(l.qty * l.unit_price)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={3} className="py-3 text-right text-xs font-bold uppercase text-ink-400">
+                    Total (VAT inclusive)
+                  </td>
+                  <td className="py-3 text-right text-base font-black tabular-nums text-ink-900">{peso(total)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      <div className="flex gap-3">
+        {step > 0 && (
+          <Button variant="secondary" onClick={() => setStep((s) => s - 1)}>
+            Back
+          </Button>
+        )}
+        {step < 2 ? (
+          <Button onClick={() => setStep((s) => s + 1)} disabled={!canAdvance} full>
+            Continue
+          </Button>
+        ) : (
+          <Button onClick={save} disabled={saving || lines.length === 0} full>
+            {saving ? 'Saving…' : 'Save draft PR'}
+          </Button>
+        )}
+      </div>
+    </div>
+  )
+}
