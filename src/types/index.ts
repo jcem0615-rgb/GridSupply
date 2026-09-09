@@ -206,6 +206,36 @@ export interface Attachment {
   created_at: string
 }
 
+export type PaymentMethodKind = 'gcash' | 'bank_transfer' | 'maya' | 'other'
+
+export const PAYMENT_KIND_LABEL: Record<PaymentMethodKind, string> = {
+  gcash: 'GCash',
+  bank_transfer: 'Bank transfer',
+  maya: 'Maya',
+  other: 'Other',
+}
+
+/**
+ * How the platform owner wants to be paid. Owned by the Owner Portal and read
+ * by every supplier, so a supplier pays into an account the owner published
+ * rather than one hardcoded in the build.
+ */
+export interface PaymentMethod {
+  id: string
+  label: string
+  kind: PaymentMethodKind
+  account_name: string
+  account_number: string
+  bank_name: string
+  instructions: string
+  /** Uploaded QR code the supplier can scan. */
+  qr_attachment_id: string | null
+  active: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
 export type PaymentStatus = 'pending' | 'approved' | 'rejected'
 
 export interface SubscriptionPayment {
@@ -213,7 +243,9 @@ export interface SubscriptionPayment {
   client_uuid: string
   supplier_id: string
   amount: number
-  method: 'gcash' | 'bank_transfer'
+  payment_method_id: string | null
+  /** Snapshot of the method's name at submission, so history survives deletion. */
+  method_label: string
   reference: string
   period_covered: string
   proof_attachment_id: string | null

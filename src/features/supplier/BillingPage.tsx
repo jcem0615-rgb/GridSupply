@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../lib/db/dexie'
 import { useAuth } from '../../store/auth'
@@ -6,16 +6,16 @@ import { peso } from '../../lib/money'
 import { formatDate, nowIso, uuid } from '../../lib/ids'
 import { put } from '../../lib/db/repo'
 import { can } from '../../lib/permissions'
-import { Badge, Button, Card, Empty, Field, Input, Modal, Select } from '../../components/ui'
+import { Badge, Button, Card, Empty, Field, Input, Modal, cx } from '../../components/ui'
 import { PhotoCapture } from '../../components/PhotoCapture'
-import type { Attachment, SubscriptionPayment } from '../../types'
+import { PAYMENT_KIND_LABEL, type Attachment, type PaymentMethod, type SubscriptionPayment } from '../../types'
 
 const MONTHLY_FEE = 1500
 
 export function BillingPage() {
   const profile = useAuth((s) => s.profile)!
   const [open, setOpen] = useState(false)
-  const [method, setMethod] = useState<'gcash' | 'bank_transfer'>('gcash')
+  const [methodId, setMethodId] = useState('')
   const [reference, setReference] = useState('')
   const [period, setPeriod] = useState(new Date().toISOString().slice(0, 7))
   const [amount, setAmount] = useState(MONTHLY_FEE)
@@ -29,8 +29,20 @@ export function BillingPage() {
     [],
   )
   const attachments = useLiveQuery(() => db.attachments.toArray(), [], [])
+  const methods = useLiveQuery(
+    async () => (await db.payment_methods.toArray()).filter((m) => m.active).sort((a, b) => a.sort_order - b.sort_order),
+    [],
+    [] as PaymentMethod[],
+  )
+
+  useEffect(() => {
+    if (!methodId && (methods ?? []).length) setMethodId(methods![0].id)
+  }, [methods, methodId])
+
+  const selected = (methods ?? []).find((m) => m.id === methodId) ?? null
 
   const submit = async () => {
+    if (!selected) return
     setBusy(true)
     try {
       const row: SubscriptionPayment = {
@@ -38,7 +50,9 @@ export function BillingPage() {
         client_uuid: uuid(),
         supplier_id: profile.supplier_id!,
         amount,
-        method,
+        payment_method_id: selected.id,
+        /* Snapshot the name — the owner may rename or delete the method later. */
+        method_label: selected.label || PAYMENT_KIND_LABEL[selected.kind],
         reference: reference.trim(),
         period_covered: period,
         proof_attachment_id: proof?.id ?? null,
@@ -58,6 +72,7 @@ export function BillingPage() {
   }
 
   const paidUntil = supplier?.subscription_paid_until
+  const canPay = can(profile.role, 'subscription.pay')
 
   return (
     <div className="space-y-5">
@@ -68,14 +83,68 @@ export function BillingPage() {
             {peso(MONTHLY_FEE)} per month · paid until {paidUntil ? formatDate(paidUntil) : 'not yet paid'}
           </p>
         </div>
-        {can(profile.role, 'subscription.pay') && <Button onClick={() => setOpen(true)}>Submit payment</Button>}
+        {canPay && (
+          <Button onClick={() => setOpen(true)} disabled={(methods ?? []).length === 0}>
+            Submit payment
+          </Button>
+        )}
       </div>
 
-      <Card title="How payment works">
-        <ol className="space-y-2 text-sm text-ink-600">
-          <li>1. Send {peso(MONTHLY_FEE)} via GCash or bank transfer to the platform account.</li>
+      <Card title="Where to pay" subtitle="Accounts published by GridSupply">
+        {(methods ?? []).length === 0 ? (
+          <Empty
+            title="No payment method available yet"
+            hint="GridSupply has not published an account to pay into. Please check back shortly."
+          />
+        ) : (
+          <ul className="space-y-3">
+            {(methods ?? []).map((m) => {
+              const qr = (attachments ?? []).find((a) => a.id === m.qr_attachment_id)
+              return (
+                <li key={m.id} className="rounded-xl border border-ink-100 p-4">
+                  <div className="flex gap-4">
+                    {qr && (
+                      <img
+                        src={qr.data_url}
+                        alt={`${m.label} QR code`}
+                        className="h-28 w-28 shrink-0 rounded-lg border border-ink-100 bg-white object-contain"
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="flex items-center gap-2 text-sm font-bold text-ink-900">
+                        {m.label || PAYMENT_KIND_LABEL[m.kind]}
+                        <Badge>{PAYMENT_KIND_LABEL[m.kind]}</Badge>
+                      </p>
+                      <dl className="mt-1.5 space-y-0.5 text-xs">
+                        {m.bank_name && (
+                          <div className="flex gap-2">
+                            <dt className="w-24 shrink-0 text-ink-400">Bank</dt>
+                            <dd className="text-ink-900">{m.bank_name}</dd>
+                          </div>
+                        )}
+                        <div className="flex gap-2">
+                          <dt className="w-24 shrink-0 text-ink-400">Account name</dt>
+                          <dd className="text-ink-900">{m.account_name || '—'}</dd>
+                        </div>
+                        <div className="flex gap-2">
+                          <dt className="w-24 shrink-0 text-ink-400">
+                            {m.kind === 'bank_transfer' ? 'Account no.' : 'Number'}
+                          </dt>
+                          <dd className="font-bold tabular-nums text-ink-900">{m.account_number}</dd>
+                        </div>
+                      </dl>
+                      {m.instructions && <p className="mt-2 text-xs text-ink-400">{m.instructions}</p>}
+                    </div>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+        <ol className="mt-4 space-y-1.5 border-t border-ink-100 pt-4 text-sm text-ink-600">
+          <li>1. Send {peso(MONTHLY_FEE)} to one of the accounts above.</li>
           <li>2. Photograph the receipt and submit it here with the reference number.</li>
-          <li>3. The platform owner reviews it — your account stays active while a payment is pending.</li>
+          <li>3. GridSupply reviews it — your account stays active while a payment is pending.</li>
         </ol>
       </Card>
 
@@ -94,7 +163,7 @@ export function BillingPage() {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-ink-900">{peso(p.amount)}</p>
                     <p className="truncate text-xs text-ink-400">
-                      {p.period_covered} · {p.method === 'gcash' ? 'GCash' : 'Bank transfer'} · Ref {p.reference || '—'}
+                      {p.period_covered} · {p.method_label} · Ref {p.reference || '—'}
                     </p>
                     {p.review_note && <p className="text-xs text-ink-400">Note: {p.review_note}</p>}
                   </div>
@@ -116,12 +185,36 @@ export function BillingPage() {
               <Input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} />
             </Field>
           </div>
-          <Field label="Method">
-            <Select value={method} onChange={(e) => setMethod(e.target.value as 'gcash' | 'bank_transfer')}>
-              <option value="gcash">GCash</option>
-              <option value="bank_transfer">Bank transfer</option>
-            </Select>
-          </Field>
+
+          <div>
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-400">Paid via</p>
+            <div className="space-y-2">
+              {(methods ?? []).map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => setMethodId(m.id)}
+                  className={cx(
+                    'flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition',
+                    methodId === m.id ? 'border-brand bg-brand-soft/50' : 'border-ink-200 hover:bg-ink-50',
+                  )}
+                >
+                  <span
+                    className={cx(
+                      'h-4 w-4 shrink-0 rounded-full border-2',
+                      methodId === m.id ? 'border-brand bg-brand' : 'border-ink-200',
+                    )}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-ink-900">
+                      {m.label || PAYMENT_KIND_LABEL[m.kind]}
+                    </span>
+                    <span className="block truncate text-[11px] text-ink-400">{m.account_number}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <Field label="Reference number">
             <Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="0091234567" />
           </Field>
@@ -129,7 +222,7 @@ export function BillingPage() {
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-400">Screenshot / receipt</p>
             <PhotoCapture kind="payment_proof" value={proof} onChange={setProof} label="Capture receipt" />
           </div>
-          <Button full disabled={busy || !reference.trim() || amount <= 0} onClick={submit}>
+          <Button full disabled={busy || !reference.trim() || amount <= 0 || !selected} onClick={submit}>
             Submit for review
           </Button>
         </div>

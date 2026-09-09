@@ -1,7 +1,15 @@
 import { db } from './dexie'
 import { nowIso, uuid } from '../ids'
 import { sellingPrice } from '../money'
-import type { CatalogItem, ItemUnit, Profile, School, Supplier, TaxConfig } from '../../types'
+import type {
+  CatalogItem,
+  ItemUnit,
+  PaymentMethod,
+  Profile,
+  School,
+  Supplier,
+  TaxConfig,
+} from '../../types'
 
 export const SCHOOL_ID = '11111111-1111-4111-8111-111111111111'
 export const SUPPLIER_ID = '22222222-2222-4222-8222-222222222222'
@@ -97,6 +105,53 @@ const CATALOG: CatalogItem[] = [
   item('Folder, Long', '100 pieces per pack', 'pack', 340, 19),
 ]
 
+const method = (
+  id: string,
+  label: string,
+  kind: PaymentMethod['kind'],
+  account_name: string,
+  account_number: string,
+  bank_name: string,
+  instructions: string,
+  sort_order: number,
+): PaymentMethod => ({
+  id,
+  label,
+  kind,
+  account_name,
+  account_number,
+  bank_name,
+  instructions,
+  qr_attachment_id: null,
+  active: true,
+  sort_order,
+  created_at: nowIso(),
+  updated_at: nowIso(),
+})
+
+const PAYMENT_METHODS: PaymentMethod[] = [
+  method(
+    'pm-gcash',
+    'GCash',
+    'gcash',
+    'GridSupply Technologies',
+    '0917 555 0142',
+    '',
+    'Send the exact amount and keep the reference number shown after sending.',
+    1,
+  ),
+  method(
+    'pm-bank',
+    'BPI Savings',
+    'bank_transfer',
+    'GridSupply Technologies Inc.',
+    '1234-5678-90',
+    'Bank of the Philippine Islands',
+    'Use your supplier name as the transfer remark so we can match the payment.',
+    2,
+  ),
+]
+
 const taxConfig: TaxConfig = {
   id: TAX_CONFIG_ID,
   vat_rate: 0.12,
@@ -109,17 +164,21 @@ const taxConfig: TaxConfig = {
 
 /** Idempotent — safe to call on every boot. */
 export async function seedIfEmpty() {
+  /* Payment methods arrived in v3, so an older install has tenants but no
+     methods — backfill them without touching anything else. */
+  if ((await db.payment_methods.count()) === 0) await db.payment_methods.bulkPut(PAYMENT_METHODS)
   const count = await db.schools.count()
   if (count > 0) return
   await db.transaction(
     'rw',
-    [db.schools, db.suppliers, db.profiles, db.catalog_items, db.tax_config],
+    [db.schools, db.suppliers, db.profiles, db.catalog_items, db.tax_config, db.payment_methods],
     async () => {
       await db.schools.put(school)
       await db.suppliers.put(supplier)
       await db.profiles.bulkPut(SEED_PROFILES)
       await db.catalog_items.bulkPut(CATALOG)
       await db.tax_config.put(taxConfig)
+      await db.payment_methods.bulkPut(PAYMENT_METHODS)
     },
   )
 }

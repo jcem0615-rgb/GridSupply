@@ -12,6 +12,7 @@ The authoritative artifact is `supabase/schema.sql`. This document explains its 
 | `order_lines` | Line items |
 | `order_events` | Append-only audit trail |
 | `messages` | Order chat, including injected system events |
+| `payment_methods` | Accounts the owner publishes for suppliers to pay into |
 | `subscription_payments` | Supplier proof-of-payment submissions and owner review |
 | `tax_config` | VAT / EWT / final-VAT rates and ATC codes as **data** |
 | `branding`, `print_templates` | Per-tenant visual and document customisation |
@@ -47,6 +48,16 @@ and status not in ('draft','pr_submitted','pr_approved','pr_rejected')
 
 Child tables (`order_lines`, `order_events`, `messages`) inherit that decision through
 `can_see_order(uuid)` rather than repeating it, so the rule has exactly one definition.
+
+## Payment methods
+The destination account for the subscription fee is data, not configuration. The owner
+maintains `payment_methods` (GCash, Maya, bank transfer, each with an optional QR image),
+and `payment_methods_select` lets **every** signed-in user read them — a supplier who
+cannot see the account cannot pay into it. Only `is_owner()` may write.
+
+`subscription_payments.payment_method_id` is `on delete set null` and sits beside
+`method_label`, a snapshot of the method's name taken at submission. Deleting a retired
+account therefore never rewrites what a past payment says it was paid into.
 
 ## Storage
 Four private buckets, each keyed by a tenant-id path prefix enforced in the policy:

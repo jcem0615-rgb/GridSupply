@@ -24,6 +24,14 @@ values (
   true
 ) on conflict (id) do nothing;
 
+insert into payment_methods (label, kind, account_name, account_number, bank_name, instructions, sort_order) values
+  ('GCash', 'gcash', 'GridSupply Technologies', '0917 555 0142', '',
+   'Send the exact amount and keep the reference number shown after sending.', 1),
+  ('BPI Savings', 'bank_transfer', 'GridSupply Technologies Inc.', '1234-5678-90',
+   'Bank of the Philippine Islands',
+   'Use your supplier name as the transfer remark so we can match the payment.', 2)
+on conflict do nothing;
+
 insert into tax_config (vat_rate, ewt_rate, final_vat_withheld_rate, ewt_atc, vat_atc, effective_from)
 values (0.12, 0.01, 0.05, 'WC158', 'WV010', '2024-01-01')
 on conflict do nothing;

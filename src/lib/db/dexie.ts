@@ -8,6 +8,7 @@ import type {
   OrderEvent,
   OrderLine,
   OutboxEntry,
+  PaymentMethod,
   PrintTemplate,
   Profile,
   School,
@@ -32,6 +33,7 @@ export class GridSupplyDB extends Dexie {
   messages!: Table<Message, string>
   attachments!: Table<Attachment, string>
   subscription_payments!: Table<SubscriptionPayment, string>
+  payment_methods!: Table<PaymentMethod, string>
   tax_config!: Table<TaxConfig, string>
   branding!: Table<BrandingSettings, string>
   print_templates!: Table<PrintTemplate, string>
@@ -69,6 +71,26 @@ export class GridSupplyDB extends Dexie {
         .filter((p: { role: string }) => retired.includes(p.role))
         .delete()
     })
+
+    /**
+     * v3 introduces owner-published payment methods. Existing submissions
+     * carried a hardcoded `method` string; carry it across as the label
+     * snapshot so payment history keeps reading correctly.
+     */
+    this.version(3)
+      .stores({ payment_methods: 'id, kind, active, sort_order' })
+      .upgrade(async (tx) => {
+        await tx
+          .table('subscription_payments')
+          .toCollection()
+          .modify((row: Record<string, unknown>) => {
+            if (row.method_label === undefined) {
+              row.method_label = row.method === 'bank_transfer' ? 'Bank transfer' : 'GCash'
+            }
+            if (row.payment_method_id === undefined) row.payment_method_id = null
+            delete row.method
+          })
+      })
   }
 }
 

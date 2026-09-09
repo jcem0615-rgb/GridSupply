@@ -151,18 +151,27 @@ try {
     await page.keyboard.press('Escape')
   })
 
-  await step('supplier submits a subscription payment', async () => {
+  await step("supplier sees the owner's published payment methods", async () => {
     await page.goto(BASE + '/supplier/billing')
+    await page.waitForSelector('text=Where to pay')
+    await page.waitForSelector('text=0917 555 0142')
+    await page.waitForSelector('text=Bank of the Philippine Islands')
+  })
+
+  await step('supplier submits a payment against a chosen method', async () => {
     await page.getByRole('button', { name: 'Submit payment' }).click()
+    await page.getByRole('button', { name: /BPI Savings/ }).click()
     await page.getByPlaceholder('0091234567').fill('0091234567')
     await page.getByRole('button', { name: 'Submit for review' }).click()
     await page.waitForSelector('text=pending')
+    /* The method label is snapshotted onto the payment record. */
+    await page.waitForSelector('text=BPI Savings')
   })
 
   await step('owner reviews and approves the payment', async () => {
     await signOut(); await signInAs('Jose Cruz')
     await page.goto(BASE + '/owner/payments')
-    await page.getByRole('button', { name: 'Review' }).click()
+    await page.getByRole('button', { name: 'Review', exact: true }).click()
     await page.getByRole('button', { name: 'Approve & extend' }).click()
     await page.waitForTimeout(400)
     await page.getByRole('button', { name: 'approved' }).click()
@@ -173,6 +182,78 @@ try {
     await page.goto(BASE + '/owner/accounts')
     await page.waitForSelector('text=Bagong Silang Elementary School')
     await page.screenshot({ path: `${shots}/owner-accounts.png` })
+  })
+
+  await step('owner adds a school', async () => {
+    await page.getByRole('button', { name: 'Add school' }).first().click()
+    await page.getByPlaceholder('Bagong Silang Elementary School').fill('San Roque National High School')
+    await page.getByPlaceholder('104721').fill('998877')
+    await page.getByRole('button', { name: 'Save school' }).click()
+    await page.waitForSelector('text=San Roque National High School')
+  })
+
+  await step('owner edits that school', async () => {
+    const row = page.locator('li', { hasText: 'San Roque National High School' }).first()
+    await row.getByRole('button', { name: 'Edit' }).click()
+    await page.getByPlaceholder('Division of Caloocan City').fill('Division of Rizal')
+    await page.getByRole('button', { name: 'Save school' }).click()
+    await page.waitForSelector('text=Division of Rizal')
+  })
+
+  await step('owner adds a person into the new school', async () => {
+    await page.getByRole('button', { name: 'people' }).click()
+    await page.getByRole('button', { name: 'Add person' }).first().click()
+    await page.locator('input[type="email"]').fill('head@sanroque.deped.gov.ph')
+    await page.locator('input').first().fill('Maria Ocampo')
+    await page.locator('select').last().selectOption({ label: 'San Roque National High School' })
+    await page.getByRole('button', { name: 'Save person' }).click()
+    await page.waitForSelector('text=Maria Ocampo')
+  })
+
+  await step('deleting a tenant with transactions is refused', async () => {
+    await page.getByRole('button', { name: 'schools' }).click()
+    const row = page.locator('li', { hasText: 'Bagong Silang Elementary School' }).first()
+    await row.getByRole('button', { name: 'Delete' }).click()
+    await page.waitForSelector('text=cannot be deleted')
+    const del = page.getByRole('button', { name: 'Delete', exact: true }).last()
+    if (!(await del.isDisabled())) throw new Error('delete button should be disabled')
+    await page.getByRole('button', { name: 'Cancel' }).click()
+  })
+
+  await step('owner deletes the unused school and its people', async () => {
+    const row = page.locator('li', { hasText: 'San Roque National High School' }).first()
+    await row.getByRole('button', { name: 'Delete' }).click()
+    await page.waitForSelector('text=will be deleted too')
+    await page.getByRole('button', { name: 'Delete', exact: true }).last().click()
+    await page.waitForTimeout(600)
+    const body = await page.locator('body').innerText()
+    if (body.includes('San Roque National High School')) throw new Error('school was not deleted')
+    await page.getByRole('button', { name: 'people' }).click()
+    await page.waitForTimeout(300)
+    if ((await page.locator('body').innerText()).includes('Maria Ocampo')) {
+      throw new Error('cascade did not remove the tenant user')
+    }
+  })
+
+  await step('owner adds a payment method suppliers can pay into', async () => {
+    await page.goto(BASE + '/owner/payments')
+    await page.getByRole('button', { name: 'Payment methods' }).click()
+    await page.waitForSelector('text=Where suppliers send payment')
+    await page.getByRole('button', { name: 'Add method' }).click()
+    await page.getByPlaceholder('GCash — main').fill('Maya Business')
+    await page.locator('select').first().selectOption('maya')
+    await page.getByPlaceholder('0917 555 0142').last().fill('0998 111 2233')
+    await page.getByRole('button', { name: 'Save method' }).click()
+    await page.waitForSelector('text=Maya Business')
+    await page.screenshot({ path: `${shots}/owner-payment-methods.png`, fullPage: true })
+  })
+
+  await step('the new method reaches the supplier billing page', async () => {
+    await signOut(); await signInAs('Marites Delos Reyes')
+    await page.goto(BASE + '/supplier/billing')
+    await page.waitForSelector('text=Maya Business')
+    await page.waitForSelector('text=0998 111 2233')
+    await page.screenshot({ path: `${shots}/supplier-billing.png`, fullPage: true })
   })
 
   await step('template customizer renders a live preview', async () => {

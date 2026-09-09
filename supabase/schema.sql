@@ -205,12 +205,34 @@ create index on messages (order_id, created_at);
 -- ─────────────────────────────────────────────────────────────
 -- Subscriptions, config, branding, templates
 -- ─────────────────────────────────────────────────────────────
+-- Where suppliers send the subscription fee. Owned by the platform owner and
+-- readable by every signed-in user, so nothing about the destination account
+-- is hardcoded in the client build.
+create table payment_methods (
+  id uuid primary key default gen_random_uuid(),
+  label text not null default '',
+  kind text not null default 'gcash' check (kind in ('gcash', 'bank_transfer', 'maya', 'other')),
+  account_name text not null default '',
+  account_number text not null default '',
+  bank_name text not null default '',
+  instructions text not null default '',
+  qr_path text,
+  active boolean not null default true,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index on payment_methods (active, sort_order);
+
 create table subscription_payments (
   id uuid primary key default gen_random_uuid(),
   client_uuid uuid not null unique,
   supplier_id uuid not null references suppliers (id) on delete cascade,
   amount numeric(12,2) not null check (amount > 0),
-  method text not null default 'gcash',
+  -- Kept on delete: the label snapshot preserves history if a method is removed.
+  payment_method_id uuid references payment_methods (id) on delete set null,
+  method_label text not null default '',
   reference text not null default '',
   period_covered text not null,
   proof_path text,                            -- storage object path
@@ -274,6 +296,7 @@ alter table order_lines           enable row level security;
 alter table order_events          enable row level security;
 alter table messages              enable row level security;
 alter table subscription_payments enable row level security;
+alter table payment_methods       enable row level security;
 alter table tax_config            enable row level security;
 alter table branding              enable row level security;
 alter table print_templates       enable row level security;
@@ -362,6 +385,11 @@ create policy subs_insert on subscription_payments for insert with check (
 );
 create policy subs_owner_update on subscription_payments for update
   using (is_owner()) with check (is_owner());
+
+-- Every signed-in user can read the published payment methods; only the owner
+-- writes them. Suppliers must see them to pay at all.
+create policy payment_methods_select on payment_methods for select using (auth.uid() is not null);
+create policy payment_methods_write on payment_methods for all using (is_owner()) with check (is_owner());
 
 -- tax_config is read by everyone, written only by the platform owner.
 create policy tax_select on tax_config for select using (auth.uid() is not null);

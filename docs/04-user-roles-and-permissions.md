@@ -37,6 +37,7 @@ cannot press.
 | `subscription.pay` | supplier_owner | any |
 | `subscription.review` | owner | any |
 | `accounts.manage` / `branding.manage` | owner | any |
+| `payment.methods.manage` | owner | any |
 | `template.customize` | principal | any |
 
 ## Notes

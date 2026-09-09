@@ -28,6 +28,7 @@ export const PERMISSIONS = {
   'supplier.staff': ['supplier_owner'],
   'subscription.pay': ['supplier_owner'],
   'subscription.review': ['owner'],
+  'payment.methods.manage': ['owner'],
   'accounts.manage': ['owner'],
   'branding.manage': ['owner'],
   'template.customize': ['principal'],

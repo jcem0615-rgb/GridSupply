@@ -6,6 +6,7 @@ import { put } from '../../lib/db/repo'
 import { peso } from '../../lib/money'
 import { formatDate, nowIso } from '../../lib/ids'
 import { Badge, Button, Card, Empty, Field, Modal, Textarea, cx } from '../../components/ui'
+import { PaymentMethodsPanel } from './PaymentMethodsPanel'
 import type { PaymentStatus, SubscriptionPayment } from '../../types'
 
 /** Approving a month of subscription extends the supplier's paid-until date. */
@@ -18,6 +19,7 @@ function extend(paidUntil: string | null, period: string) {
 
 export function PaymentsPage() {
   const profile = useAuth((s) => s.profile)!
+  const [tab, setTab] = useState<'queue' | 'methods'>('queue')
   const [filter, setFilter] = useState<PaymentStatus>('pending')
   const [active, setActive] = useState<SubscriptionPayment | null>(null)
   const [note, setNote] = useState('')
@@ -69,6 +71,28 @@ export function PaymentsPage() {
     <div className="space-y-5">
       <h1 className="text-xl font-black tracking-tight text-ink-900">Subscription payments</h1>
 
+      <div className="flex gap-2 border-b border-ink-100 pb-3">
+        {([
+          ['queue', 'Review queue'],
+          ['methods', 'Payment methods'],
+        ] as const).map(([k, label]) => (
+          <button
+            key={k}
+            onClick={() => setTab(k)}
+            className={cx(
+              'rounded-full px-3.5 py-1.5 text-xs font-bold transition',
+              tab === k ? 'bg-brand text-white' : 'border border-ink-100 bg-white text-ink-400',
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'methods' && <PaymentMethodsPanel />}
+
+      {tab === 'queue' && (
+      <>
       <div className="flex gap-2">
         {(['pending', 'approved', 'rejected'] as PaymentStatus[]).map((s) => (
           <button
@@ -104,7 +128,7 @@ export function PaymentsPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-ink-900">{supplier?.name ?? p.supplier_id}</p>
                     <p className="truncate text-xs text-ink-400">
-                      {peso(p.amount)} · {p.period_covered} · {p.method === 'gcash' ? 'GCash' : 'Bank'} · Ref {p.reference || '—'}
+                      {peso(p.amount)} · {p.period_covered} · {p.method_label} · Ref {p.reference || '—'}
                     </p>
                     <p className="text-[11px] text-ink-400">Submitted {formatDate(p.created_at)}</p>
                   </div>
@@ -118,6 +142,9 @@ export function PaymentsPage() {
             })}
           </ul>
         </Card>
+      )}
+
+      </>
       )}
 
       <Modal open={!!active} onClose={() => setActive(null)} title="Review payment" wide>
@@ -144,7 +171,7 @@ export function PaymentsPage() {
               </div>
               <div>
                 <dt className="text-xs uppercase text-ink-400">Method</dt>
-                <dd>{active.method === 'gcash' ? 'GCash' : 'Bank transfer'}</dd>
+                <dd>{active.method_label}</dd>
               </div>
               <div>
                 <dt className="text-xs uppercase text-ink-400">Reference</dt>

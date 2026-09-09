@@ -10,8 +10,8 @@ Voucher → BIR Form 2307 workflow, with strict per-tenant data isolation and of
 capture in the field.
 
 ## Three portals, one codebase
-1. **Owner Portal** — platform super-admin: school/supplier account management, branding
-   asset uploads, subscription payment approval queue.
+1. **Owner Portal** — platform super-admin: full CRUD on schools, suppliers and people;
+   branding asset uploads; published payment methods; subscription payment approval queue.
 2. **School Portal** — a single Principal account per school: PR/PO/DV creation, print
    template customisation, cheque photo capture. The Custodian, BAC and Disbursing Officer
    are document signatories, not users.
@@ -62,6 +62,14 @@ you have not broken the critical path.
 - **Auth wiring** — `handle_new_user()` builds the `profiles` row from invite metadata.
   Admin-invite only; no self-service sign-up, which is correct for closed procurement.
 - **Print customiser** — slot-based, not free drag-and-drop. Reasoning in `docs/08`.
+- **Deleting a tenant with orders is refused, not cascaded.** Purchase orders and vouchers
+  are an audit trail for public funds. The Owner Portal blocks the delete and points at
+  `stopped`, which revokes access and is reversible. A tenant with no orders deletes, and
+  its people cascade with it.
+- **Payment methods are data.** The owner publishes GCash / Maya / bank accounts (with an
+  optional QR upload) and suppliers pay into those; nothing about the destination account
+  is hardcoded. Payments snapshot `method_label` so history survives a method being
+  renamed or deleted. Dexie v3 backfills both for existing browsers.
 - **One school login** — the `custodian`, `bac` and `disbursing` roles were removed and
   their permissions folded into `principal`. Separation of duties is now documented on the
   printed output (per-template signatories) rather than enforced by the software; see the
@@ -74,7 +82,8 @@ you have not broken the critical path.
 - **Web Push has no Edge Function yet.** The service worker handles `push` and
   `notificationclick`; the sender and the subscription table are still to build.
 - **Supplier employee invites** — `supplier.staff` is defined in the permission matrix but
-  there is no invite UI yet.
+  there is no invite UI yet. The Owner Portal can create supplier employees in the meantime
+  (Accounts → People), which covers the need without a self-serve invite flow.
 - **Multi-district / division hierarchy** — out of scope for v1. Flag if the user asks for
   division-level dashboards; `schools.division` and `.district` are already captured.
 - **WebUSB / thermal printing** — not applicable to this spec, deliberately skipped.
