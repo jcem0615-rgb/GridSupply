@@ -8,6 +8,8 @@ import { put, remove } from '../../lib/db/repo'
 import { getTaxConfig } from '../../lib/db/seed'
 import { can } from '../../lib/permissions'
 import { Button, Card, Empty, Field, Input, Modal, Select, Textarea, cx } from '../../components/ui'
+import { Pager } from '../../components/Pager'
+import { usePaged } from '../../lib/usePaged'
 import type { CatalogItem, ItemUnit } from '../../types'
 
 const UNITS: ItemUnit[] = ['pc', 'box', 'ream', 'pack', 'set', 'bot', 'unit']
@@ -38,7 +40,11 @@ export function CatalogPage() {
   const tax = useLiveQuery(() => getTaxConfig(), [])
 
   const canPrice = can(profile.role, 'catalog.pricing')
-  const rows = (items ?? []).filter((i) => i.name.toLowerCase().includes(q.toLowerCase()))
+  const term = q.trim().toLowerCase()
+  const rows = (items ?? []).filter(
+    (i) => term === '' || i.name.toLowerCase().includes(term) || i.description.toLowerCase().includes(term),
+  )
+  const paged = usePaged(rows, 12, term)
 
   const save = async () => {
     if (!editing) return
@@ -65,11 +71,14 @@ export function CatalogPage() {
       <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search catalog…" />
 
       {rows.length === 0 ? (
-        <Empty title="No items yet" hint="Add your first item — schools only see items marked active." />
+        <Empty
+          title={term ? 'No matching items' : 'No items yet'}
+          hint={term ? 'Try a different search term.' : 'Add your first item — schools only see items marked active.'}
+        />
       ) : (
         <Card>
           <ul className="divide-y divide-ink-100">
-            {rows.map((i) => (
+            {paged.rows.map((i) => (
               <li key={i.id} className="flex items-center gap-3 py-3">
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-2 truncate text-sm font-bold text-ink-900">
@@ -89,6 +98,7 @@ export function CatalogPage() {
               </li>
             ))}
           </ul>
+          <Pager paged={paged} unit="items" />
         </Card>
       )}
 

@@ -6,6 +6,8 @@ import { useAuth } from '../../store/auth'
 import { peso, round2 } from '../../lib/money'
 import { createPR, type DraftLine } from '../../lib/orders'
 import { Button, Card, Empty, Field, Input, Select, Textarea, cx } from '../../components/ui'
+import { Pager } from '../../components/Pager'
+import { usePaged } from '../../lib/usePaged'
 import { can } from '../../lib/permissions'
 import type { CatalogItem } from '../../types'
 
@@ -22,6 +24,7 @@ export function PRWizard() {
   const [supplierId, setSupplierId] = useState('')
   const [qty, setQty] = useState<Record<string, number>>({})
   const [search, setSearch] = useState('')
+  const [selectedOnly, setSelectedOnly] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const suppliers = useLiveQuery(() => db.suppliers.filter((s) => s.status === 'active').toArray(), [], [])
@@ -32,10 +35,23 @@ export function PRWizard() {
     [] as CatalogItem[],
   )
 
+  const term = search.trim().toLowerCase()
   const visible = useMemo(
-    () => (catalog ?? []).filter((c) => c.active && c.name.toLowerCase().includes(search.toLowerCase())),
-    [catalog, search],
+    () =>
+      (catalog ?? []).filter(
+        (c) =>
+          c.active &&
+          (term === '' ||
+            c.name.toLowerCase().includes(term) ||
+            c.description.toLowerCase().includes(term)) &&
+          (!selectedOnly || (qty[c.id] ?? 0) > 0),
+      ),
+    [catalog, term, selectedOnly, qty],
   )
+
+  /* Quantities are keyed by item id, so a selection survives paging and
+     searching — only the rendered window changes. */
+  const paged = usePaged(visible, 10, `${term}|${selectedOnly}|${supplierId}`)
 
   const lines: DraftLine[] = useMemo(
     () =>
@@ -124,17 +140,38 @@ export function PRWizard() {
 
       {step === 1 && (
         <Card title="Items" subtitle={`${lines.length} selected · ${peso(total)}`}>
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search the supplier's catalog…"
-            className="mb-4"
-          />
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search the supplier's catalog…"
+              className="min-w-48 flex-1"
+            />
+            <button
+              onClick={() => setSelectedOnly((v) => !v)}
+              disabled={lines.length === 0 && !selectedOnly}
+              className={cx(
+                'shrink-0 rounded-xl px-3.5 py-2.5 text-xs font-bold transition disabled:opacity-40',
+                selectedOnly ? 'bg-brand text-white' : 'border border-ink-200 text-ink-600 hover:bg-ink-50',
+              )}
+            >
+              Selected ({lines.length})
+            </button>
+          </div>
           {visible.length === 0 ? (
-            <Empty title="No catalog items" hint="This supplier has not published any active items yet." />
+            <Empty
+              title={selectedOnly ? 'Nothing selected yet' : term ? 'No matching items' : 'No catalog items'}
+              hint={
+                selectedOnly
+                  ? 'Add a quantity to an item and it will appear here.'
+                  : term
+                    ? 'Try a different search term.'
+                    : 'This supplier has not published any active items yet.'
+              }
+            />
           ) : (
             <ul className="divide-y divide-ink-100">
-              {visible.map((c) => (
+              {paged.rows.map((c) => (
                 <li key={c.id} className="flex items-center gap-3 py-3">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-ink-900">{c.name}</p>
@@ -171,6 +208,7 @@ export function PRWizard() {
               ))}
             </ul>
           )}
+          <Pager paged={paged} unit="items" />
         </Card>
       )}
 

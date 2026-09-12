@@ -72,6 +72,12 @@ you have not broken the critical path.
   school Principal would hand a vendor the account that approves their own POs, so it is
   refused in `canResetPasswordFor()`, in the Team page query, and in RLS (both `USING` and
   `WITH CHECK`). Reasoning in `docs/09`.
+- **Long lists are paginated client-side.** `usePaged` + `<Pager>` cover the PR wizard's
+  item picker (10/page), the supplier catalog (12/page) and the order lists (15/page).
+  Selections in the wizard are keyed by item id, so they survive paging and searching; a
+  "Selected (n)" filter lets a buyer review picks without hunting pages. Server-side
+  paging becomes worthwhile only once a tenant's catalog stops fitting in IndexedDB, which
+  the offline layer requires it to do anyway.
 - **Payment methods are data.** The owner publishes GCash / Maya / bank accounts (with an
   optional QR upload) and suppliers pay into those; nothing about the destination account
   is hardcoded. Payments snapshot `method_label` so history survives a method being

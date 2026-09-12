@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { peso } from '../../lib/money'
 import { formatDate } from '../../lib/ids'
 import { Card, Empty, StatusPill, cx } from '../../components/ui'
+import { Pager } from '../../components/Pager'
+import { usePaged } from '../../lib/usePaged'
 import type { Order, OrderStatus } from '../../types'
 
 const GROUPS: { key: string; label: string; match: (s: OrderStatus) => boolean }[] = [
@@ -25,12 +27,14 @@ export function OrderList({
   const [q, setQ] = useState('')
 
   const active = GROUPS.find((g) => g.key === group)!
+  const term = q.trim().toLowerCase()
   const rows = orders.filter(
     (o) =>
       active.match(o.status) &&
-      (q === '' ||
-        `${o.pr_number} ${o.po_number ?? ''} ${o.dv_number ?? ''} ${o.purpose}`.toLowerCase().includes(q.toLowerCase())),
+      (term === '' ||
+        `${o.pr_number} ${o.po_number ?? ''} ${o.dv_number ?? ''} ${o.purpose}`.toLowerCase().includes(term)),
   )
+  const paged = usePaged(rows, 15, `${term}|${group}`)
 
   return (
     <div className="space-y-4">
@@ -63,7 +67,7 @@ export function OrderList({
       ) : (
         <Card className="overflow-hidden" >
           <ul className="divide-y divide-ink-100">
-            {rows.map((o) => (
+            {paged.rows.map((o) => (
               <li key={o.id}>
                 <Link to={`/orders/${o.id}`} className="flex items-center gap-3 py-3 transition hover:bg-ink-50/60">
                   <div className="min-w-0 flex-1">
@@ -83,12 +87,9 @@ export function OrderList({
               </li>
             ))}
           </ul>
+          <Pager paged={paged} unit="requests" />
         </Card>
       )}
-
-      <p className="text-center text-[11px] text-ink-400">
-        Showing {rows.length} of {orders.length}
-      </p>
     </div>
   )
 }
