@@ -48,6 +48,29 @@ separate deployments.
 `npm run smoke` walks the whole lifecycle in a real browser and is the fastest way to check
 you have not broken the critical path.
 
+## Design system
+Warm, cozy palette on glassmorphic surfaces. `src/index.css` holds the whole thing:
+
+- **Token names are stable.** `ink-50..900`, `brand`, `accent` kept their names when the
+  palette changed from green to terracotta, so ~300 existing class attributes reskinned by
+  editing values. Change colours there, not in components.
+- **The neutral ramp is warm taupe, not grey** — a true grey reads as dirt on a cream
+  ground. `ink-400` carries most small secondary text and is held at 4.9:1.
+- **Glass needs something to refract.** `.aurora` (drifting warm gradients) and `.grain`
+  sit behind everything; without them blurred panels read as flat grey. Both are
+  `position: fixed` with `pointer-events: none`, and the aurora stops animating under
+  `prefers-reduced-motion`.
+- **Never nest `.glass` inside `.glass`** — stacked translucency turns muddy. `Empty` is
+  deliberately a dashed outline, not a panel, because it always renders inside a `Card`.
+- **`@supports not (backdrop-filter)`** falls back to near-opaque surfaces, or the design
+  collapses into unreadable smears on browsers without blur.
+- **Print strips all of it.** `@media print` forces glass to opaque white and hides the
+  aurora — a `backdrop-filter` can render a sheet blank on some printers, and the documents
+  are the product.
+- **Logo.** `public/icons/logo-mark.svg` is the source of truth; `npm run icons` composes
+  every launcher size from it. The mark is authored on a transparent ground so it can sit
+  on glass in the header.
+
 ## Resolved decisions
 - **PDF engine** — print-CSS only. Works offline, no bundle cost, the preview *is* the
   output, and the OS print dialog still yields a PDF. Revisit only if suppliers need

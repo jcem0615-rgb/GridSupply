@@ -147,7 +147,7 @@ export function CatalogPage() {
                 value={editing.markup_pct}
                 disabled={!canPrice}
                 onChange={(e) => setEditing({ ...editing, markup_pct: Number(e.target.value) })}
-                className="w-full accent-[#c2701c] disabled:opacity-40"
+                className="w-full accent-[#a8651f] disabled:opacity-40"
               />
               {!canPrice && <p className="mt-1 text-[11px] text-ink-400">Only the supplier owner can change pricing.</p>}
             </div>
@@ -179,7 +179,7 @@ export function CatalogPage() {
                     <dd
                       className={cx(
                         'tabular-nums font-bold',
-                        preview.netPayable - editing.base_cost >= 0 ? 'text-emerald-700' : 'text-red-600',
+                        preview.netPayable - editing.base_cost >= 0 ? 'text-[#5f7740]' : 'text-red-600',
                       )}
                     >
                       {peso(preview.netPayable - editing.base_cost)}
@@ -194,7 +194,7 @@ export function CatalogPage() {
                 type="checkbox"
                 checked={editing.active}
                 onChange={(e) => setEditing({ ...editing, active: e.target.checked })}
-                className="h-4 w-4 accent-[#0f3d2e]"
+                className="h-4 w-4 accent-[#b4593a]"
               />
               Visible to schools
             </label>

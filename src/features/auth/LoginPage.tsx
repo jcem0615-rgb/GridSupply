@@ -41,20 +41,25 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-full bg-gradient-to-b from-brand to-ink-700 px-4 py-10">
-      <div className="mx-auto w-full max-w-4xl">
+    <div className="relative min-h-full overflow-hidden bg-gradient-to-b from-[#3b2a20] via-[#5b3626] to-[#8a4530] px-4 py-10">
+      <div className="aurora !z-0 opacity-80" aria-hidden />
+      <div className="grain !z-0" aria-hidden />
+      <div className="relative z-10 mx-auto w-full max-w-4xl">
         <div className="mb-8 text-center text-white">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 text-lg font-black backdrop-blur">
-            GS
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl border border-white/30 bg-white/85 p-2.5 shadow-[0_18px_44px_-16px_rgba(0,0,0,0.65)] backdrop-blur-xl">
+            <img src="/icons/logo-mark.svg" alt="" width={64} height={64} className="h-full w-full" />
           </div>
-          <h1 className="text-2xl font-black tracking-tight">GridSupply</h1>
+          <h1 className="text-3xl font-black tracking-tight">
+            <span className="text-white">Grid</span>
+            <span className="text-[#7fd2f4]">Supply</span>
+          </h1>
           <p className="mt-1 text-sm text-white/70">
-            DepEd school supply procurement — Purchase Request to BIR Form 2307.
+            Public school procurement — Purchase Request to BIR Form 2307.
           </p>
         </div>
 
         <div className="grid gap-5 md:grid-cols-2">
-          <Card title="Sign in" subtitle={isSupabaseConfigured ? 'Supabase Auth' : 'No backend configured — local accounts'}>
+          <Card title="Sign in" subtitle={isSupabaseConfigured ? 'Supabase Auth' : 'Accounts stored on this device'}>
             <form onSubmit={submit} className="space-y-4">
               <Field label="Email">
                 <Input
@@ -72,7 +77,7 @@ export function LoginPage() {
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder={isSupabaseConfigured ? '••••••••' : 'not checked in local mode'}
+                  placeholder="••••••••"
                 />
               </Field>
               {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
@@ -88,9 +93,9 @@ export function LoginPage() {
                 <li key={p.id}>
                   <button
                     onClick={() => go(p)}
-                    className="flex w-full items-center gap-3 rounded-xl border border-ink-100 px-3 py-2.5 text-left transition hover:border-brand hover:bg-brand-soft/40"
+                    className="flex w-full items-center gap-3 rounded-2xl border border-[rgba(120,80,50,0.14)] bg-[rgba(255,251,245,0.5)] px-3 py-2.5 text-left transition hover:border-brand/40 hover:bg-[rgba(180,89,58,0.1)]"
                   >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink-100 text-xs font-bold text-ink-600">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[rgba(214,158,58,0.35)] to-[rgba(180,89,58,0.35)] text-xs font-bold text-ink-700 ring-1 ring-white/50">
                       {p.full_name
                         .split(' ')
                         .map((n) => n[0])

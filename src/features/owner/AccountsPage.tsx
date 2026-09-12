@@ -211,7 +211,9 @@ export function AccountsPage() {
             onClick={() => setTab(t)}
             className={cx(
               'rounded-full px-3.5 py-1.5 text-xs font-bold capitalize transition',
-              tab === t ? 'bg-brand text-white' : 'border border-ink-100 bg-white text-ink-400',
+              tab === t
+                ? 'bg-gradient-to-b from-[#c2643f] to-[#a24e33] text-white shadow-[0_6px_16px_-8px_rgba(140,66,38,0.8)]'
+                : 'glass-quiet text-ink-600',
             )}
           >
             {t}
@@ -370,7 +372,7 @@ export function AccountsPage() {
                 type="checkbox"
                 checked={supplier.vat_registered}
                 onChange={(e) => setSupplier({ ...supplier, vat_registered: e.target.checked })}
-                className="h-4 w-4 accent-[#0f3d2e]"
+                className="h-4 w-4 accent-[#b4593a]"
               />
               VAT-registered
             </label>

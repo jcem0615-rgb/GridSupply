@@ -81,7 +81,9 @@ export function OrderDetail() {
             onClick={() => setTab(tb)}
             className={cx(
               'rounded-full px-3.5 py-1.5 text-xs font-bold transition',
-              tab === tb ? 'bg-brand text-white' : 'border border-ink-100 bg-white text-ink-400',
+              tab === tb
+                ? 'bg-gradient-to-b from-[#c2643f] to-[#a24e33] text-white shadow-[0_6px_16px_-8px_rgba(140,66,38,0.8)]'
+                : 'glass-quiet text-ink-600',
             )}
           >
             {tb}
@@ -99,10 +101,10 @@ export function OrderDetail() {
                     <span
                       className={cx(
                         'h-2 w-2 rounded-full',
-                        i < step ? 'bg-brand' : i === step ? 'bg-accent ring-4 ring-accent/20' : 'bg-ink-200',
+                        i < step ? 'bg-brand' : i === step ? 'bg-accent ring-4 ring-accent/25' : 'bg-ink-200',
                       )}
                     />
-                    <span className={cx('text-[10px] font-semibold', i <= step ? 'text-ink-600' : 'text-ink-200')}>
+                    <span className={cx('text-[10px] font-semibold', i <= step ? 'text-ink-600' : 'text-ink-400/55')}>
                       {s.replace(/_/g, ' ')}
                     </span>
                     {i < ORDER_FLOW.length - 1 && <span className="mx-1 h-px w-3 bg-ink-100" />}
@@ -235,7 +237,7 @@ export function OrderDetail() {
                 onClick={() => setDoc(d)}
                 className={cx(
                   'rounded-lg px-3 py-1.5 text-xs font-bold',
-                  doc === d ? 'bg-ink-900 text-white' : 'border border-ink-200 bg-white text-ink-400',
+                  doc === d ? 'bg-ink-900 text-white shadow-[0_6px_16px_-8px_rgba(42,31,24,0.8)]' : 'glass-quiet text-ink-600',
                 )}
               >
                 {DOC_TITLE[d]}

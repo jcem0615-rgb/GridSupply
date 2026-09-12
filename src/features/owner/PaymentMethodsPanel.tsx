@@ -183,7 +183,7 @@ export function PaymentMethodsPanel() {
                 type="checkbox"
                 checked={editing.active}
                 onChange={(e) => setEditing({ ...editing, active: e.target.checked })}
-                className="h-4 w-4 accent-[#0f3d2e]"
+                className="h-4 w-4 accent-[#b4593a]"
               />
               Visible to suppliers
             </label>

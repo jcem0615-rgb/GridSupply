@@ -1,24 +1,46 @@
 @import 'tailwindcss';
 
+/**
+ * Warm, cozy palette on a glass surface system.
+ *
+ * Token names are unchanged from the previous theme on purpose — every
+ * `text-ink-900`, `border-ink-100` and `bg-brand` across the app reskins by
+ * changing values here rather than by touching 300-odd class attributes.
+ *
+ * The neutral ramp is a warm taupe -> espresso, not a grey: on a cream ground
+ * a true grey reads as dirt. Contrast was checked against the page ground —
+ * ink-400 carries most of the small secondary text and sits at 4.9:1.
+ */
 @theme {
-  --color-ink-50: #f4f7f5;
-  --color-ink-100: #e4ebe7;
-  --color-ink-200: #c7d6ce;
-  --color-ink-400: #6f8a7d;
-  --color-ink-600: #33604c;
-  --color-ink-700: #204a38;
-  --color-ink-800: #16382a;
-  --color-ink-900: #0f3d2e;
-  --color-brand: #0f3d2e;
-  --color-brand-soft: #e7f0ea;
-  --color-accent: #c2701c;
-  --color-accent-soft: #fdf1e3;
+  --color-ink-50: #fbf6f0;
+  --color-ink-100: #f0e6da;
+  --color-ink-200: #e2d3c0;
+  --color-ink-400: #7d6857;
+  --color-ink-600: #5d4838;
+  --color-ink-700: #4a392c;
+  --color-ink-800: #362a20;
+  --color-ink-900: #2a1f18;
+
+  --color-brand: #b4593a;
+  --color-brand-soft: #f7e6dc;
+  --color-accent: #a8651f;
+  --color-accent-soft: #fbebd6;
+
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 :root {
   color-scheme: light;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* Glass surfaces. Warm-tinted rather than pure white, so they sit in the
+     palette instead of punching a cold hole through it. */
+  --glass: rgba(255, 250, 243, 0.58);
+  --glass-strong: rgba(255, 250, 243, 0.82);
+  --glass-quiet: rgba(255, 250, 243, 0.34);
+  --glass-edge: rgba(255, 255, 255, 0.7);
+  --glass-shadow: 0 18px 40px -20px rgba(84, 44, 22, 0.5), 0 2px 8px -3px rgba(84, 44, 22, 0.16);
+  --glass-blur: blur(22px) saturate(180%);
 }
 
 html,
@@ -29,19 +51,136 @@ body,
 
 body {
   margin: 0;
-  background: #f6f7f6;
-  color: #16382a;
+  color: var(--color-ink-900);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   overscroll-behavior-y: none;
+  background:
+    linear-gradient(168deg, #f2ddc8 0%, #eed3bd 38%, #f4e7d8 72%, #efdcc8 100%);
+  background-attachment: fixed;
 }
 
-/* Print: only the document being printed survives. */
+/**
+ * Glass needs something to refract. A flat ground makes every blurred panel
+ * read as plain grey, so the page sits on slow-drifting warm light.
+ * Fixed + pointer-events:none so it never intercepts taps or scrolls with it.
+ */
+.aurora {
+  position: fixed;
+  inset: -20vmax;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(32vmax 28vmax at 10% 12%, rgba(214, 106, 66, 0.62), transparent 66%),
+    radial-gradient(30vmax 26vmax at 90% 6%, rgba(230, 168, 70, 0.6), transparent 64%),
+    radial-gradient(34vmax 30vmax at 80% 86%, rgba(166, 78, 72, 0.55), transparent 66%),
+    radial-gradient(28vmax 26vmax at 18% 84%, rgba(196, 124, 74, 0.55), transparent 64%),
+    radial-gradient(24vmax 22vmax at 52% 48%, rgba(236, 196, 140, 0.45), transparent 68%);
+  filter: blur(18px);
+  animation: drift 34s ease-in-out infinite alternate;
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(-1.5%, -1%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(1.5%, 1.5%, 0) scale(1.06);
+  }
+}
+
+/* Fine grain stops the large gradients from banding on cheap panels, and is
+   most of what makes the surface read as paper rather than plastic. */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.32;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora {
+    animation: none;
+  }
+}
+
+.glass {
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-strong {
+  background: var(--glass-strong);
+  backdrop-filter: blur(26px) saturate(160%);
+  -webkit-backdrop-filter: blur(26px) saturate(160%);
+  border: 1px solid var(--glass-edge);
+  box-shadow: 0 24px 60px -24px rgba(88, 52, 28, 0.5);
+}
+
+.glass-quiet {
+  background: var(--glass-quiet);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* Firefox and older Safari: opacity carries the look when blur is unavailable,
+   otherwise the panels turn into flat translucent smears with no separation. */
+@supports not (backdrop-filter: blur(1px)) {
+  .glass,
+  .glass-quiet {
+    background: rgba(255, 250, 243, 0.94);
+  }
+  .glass-strong {
+    background: rgba(255, 250, 243, 0.98);
+  }
+}
+
+/* A hairline of light along the top edge — the tell that sells a glass panel
+   as something with thickness rather than a flat translucent rectangle. */
+.glass-sheen {
+  position: relative;
+  isolation: isolate;
+}
+.glass-sheen::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
+  pointer-events: none;
+}
+
+/**
+ * Print: the documents are the product, so none of the above may reach paper.
+ * Glass, aurora and grain are stripped and everything falls back to ink on
+ * white — a backdrop-filter alone can render a sheet blank on some printers.
+ */
 @media print {
   body {
     background: #fff;
   }
+  .aurora,
+  .grain,
   .no-print {
+    display: none !important;
+  }
+  .glass,
+  .glass-strong,
+  .glass-quiet {
+    background: #fff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .glass-sheen::before {
     display: none !important;
   }
   .print-sheet {
@@ -63,6 +202,6 @@ body {
   height: 6px;
 }
 .scroll-thin::-webkit-scrollbar-thumb {
-  background: #c7d6ce;
+  background: var(--color-ink-200);
   border-radius: 999px;
 }

@@ -32,8 +32,10 @@ export function ChangePasswordPage() {
   }
 
   return (
-    <div className="min-h-full bg-gradient-to-b from-brand to-ink-700 px-4 py-12">
-      <div className="mx-auto w-full max-w-md">
+    <div className="relative min-h-full overflow-hidden bg-gradient-to-b from-[#3b2a20] via-[#5b3626] to-[#8a4530] px-4 py-12">
+      <div className="aurora !z-0 opacity-80" aria-hidden />
+      <div className="grain !z-0" aria-hidden />
+      <div className="relative z-10 mx-auto w-full max-w-md">
         <div className="mb-6 text-center text-white">
           <h1 className="text-xl font-black tracking-tight">
             {forced ? 'Choose a new password' : 'Change your password'}

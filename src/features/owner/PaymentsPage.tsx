@@ -81,7 +81,9 @@ export function PaymentsPage() {
             onClick={() => setTab(k)}
             className={cx(
               'rounded-full px-3.5 py-1.5 text-xs font-bold transition',
-              tab === k ? 'bg-brand text-white' : 'border border-ink-100 bg-white text-ink-400',
+              tab === k
+                ? 'bg-gradient-to-b from-[#c2643f] to-[#a24e33] text-white shadow-[0_6px_16px_-8px_rgba(140,66,38,0.8)]'
+                : 'glass-quiet text-ink-600',
             )}
           >
             {label}
@@ -100,7 +102,9 @@ export function PaymentsPage() {
             onClick={() => setFilter(s)}
             className={cx(
               'rounded-full px-3.5 py-1.5 text-xs font-bold capitalize transition',
-              filter === s ? 'bg-brand text-white' : 'border border-ink-100 bg-white text-ink-400',
+              filter === s
+                ? 'bg-gradient-to-b from-[#c2643f] to-[#a24e33] text-white shadow-[0_6px_16px_-8px_rgba(140,66,38,0.8)]'
+                : 'glass-quiet text-ink-600',
             )}
           >
             {s}

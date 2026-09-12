@@ -73,12 +73,19 @@ export function Layout({ children }: { children: ReactNode }) {
   }, [profile?.id])
 
   return (
-    <div className="flex min-h-full flex-col bg-[#f6f7f6]">
-      <header className="no-print sticky top-0 z-30 border-b border-ink-100 bg-white/90 backdrop-blur">
+    <div className="flex min-h-full flex-col">
+      <div className="aurora no-print" aria-hidden />
+      <div className="grain no-print" aria-hidden />
+
+      <header className="no-print sticky top-0 z-30 border-b border-[rgba(120,80,50,0.12)] bg-[rgba(255,251,245,0.7)] backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand text-sm font-black text-white">
-            GS
-          </div>
+          <img
+            src="/icons/logo-mark.svg"
+            alt="GridSupply"
+            width={36}
+            height={36}
+            className="h-9 w-9 shrink-0 drop-shadow-[0_4px_10px_rgba(20,60,99,0.25)]"
+          />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-bold leading-tight text-ink-900">{tenant ?? 'GridSupply'}</p>
             <p className="truncate text-[11px] text-ink-400">
@@ -93,8 +100,10 @@ export function Layout({ children }: { children: ReactNode }) {
                 end={it.to.split('/').length === 2}
                 className={({ isActive }) =>
                   cx(
-                    'rounded-lg px-3 py-2 text-sm font-semibold transition',
-                    isActive ? 'bg-brand-soft text-brand' : 'text-ink-400 hover:bg-ink-50 hover:text-ink-600',
+                    'rounded-xl px-3 py-2 text-sm font-semibold transition',
+                    isActive
+                      ? 'bg-[rgba(180,89,58,0.13)] text-brand shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]'
+                      : 'text-ink-400 hover:bg-[rgba(255,251,245,0.6)] hover:text-ink-600',
                   )
                 }
               >
@@ -107,7 +116,7 @@ export function Layout({ children }: { children: ReactNode }) {
               await signOut()
               navigate('/login')
             }}
-            className="rounded-lg px-2.5 py-2 text-xs font-semibold text-ink-400 hover:bg-ink-50 hover:text-ink-600"
+            className="rounded-xl px-2.5 py-2 text-xs font-semibold text-ink-400 transition hover:bg-[rgba(255,251,245,0.7)] hover:text-ink-600"
           >
             Sign out
           </button>
@@ -118,10 +127,10 @@ export function Layout({ children }: { children: ReactNode }) {
 
       <InstallPrompt />
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 pb-28 md:pb-10">{children}</main>
+      <main className="relative mx-auto w-full max-w-6xl flex-1 px-4 py-5 pb-32 md:pb-10">{children}</main>
 
-      <nav className="no-print fixed inset-x-0 bottom-0 z-30 border-t border-ink-100 bg-white/95 pb-[var(--safe-bottom)] backdrop-blur md:hidden">
-        <div className="mx-auto flex max-w-lg">
+      <nav className="no-print fixed inset-x-0 bottom-0 z-30 px-3 pb-[calc(0.6rem+var(--safe-bottom))] md:hidden">
+        <div className="glass glass-sheen mx-auto flex max-w-lg overflow-hidden rounded-2xl">
           {items.map((it) => (
             <NavLink
               key={it.to}
@@ -130,7 +139,7 @@ export function Layout({ children }: { children: ReactNode }) {
               className={({ isActive }) =>
                 cx(
                   'flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-semibold transition',
-                  isActive ? 'text-brand' : 'text-ink-400',
+                  isActive ? 'bg-[rgba(180,89,58,0.12)] text-brand' : 'text-ink-400',
                 )
               }
             >

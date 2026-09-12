@@ -101,7 +101,7 @@ export function BillingPage() {
             {(methods ?? []).map((m) => {
               const qr = (attachments ?? []).find((a) => a.id === m.qr_attachment_id)
               return (
-                <li key={m.id} className="rounded-xl border border-ink-100 p-4">
+                <li key={m.id} className="glass-quiet rounded-2xl p-4">
                   <div className="flex gap-4">
                     {qr && (
                       <img
@@ -195,7 +195,9 @@ export function BillingPage() {
                   onClick={() => setMethodId(m.id)}
                   className={cx(
                     'flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition',
-                    methodId === m.id ? 'border-brand bg-brand-soft/50' : 'border-ink-200 hover:bg-ink-50',
+                    methodId === m.id
+                      ? 'border-brand/50 bg-[rgba(180,89,58,0.12)]'
+                      : 'border-[rgba(120,80,50,0.18)] hover:bg-[rgba(255,251,245,0.7)]',
                   )}
                 >
                   <span

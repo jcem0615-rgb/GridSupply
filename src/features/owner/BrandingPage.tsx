@@ -7,7 +7,8 @@ import { Button, Card, Field, Select, cx } from '../../components/ui'
 import { PhotoCapture } from '../../components/PhotoCapture'
 import type { Attachment, BrandingSettings } from '../../types'
 
-const ACCENTS = ['#0f3d2e', '#1d4ed8', '#7c2d12', '#4c1d95', '#0f766e', '#9d174d']
+/* Warm-leaning swatches so an uploaded brand colour sits in the palette. */
+const ACCENTS = ['#b4593a', '#a8651f', '#8c5b3f', '#5f7740', '#9c4a4a', '#6b4e71']
 
 export function BrandingPage() {
   const [scope, setScope] = useState<'platform' | 'school' | 'supplier'>('platform')

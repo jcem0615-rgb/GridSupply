@@ -47,7 +47,9 @@ export function OrderList({
             onClick={() => setGroup(g.key)}
             className={cx(
               'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition',
-              group === g.key ? 'bg-brand text-white' : 'bg-white text-ink-400 border border-ink-100',
+              group === g.key
+                ? 'bg-gradient-to-b from-[#c2643f] to-[#a24e33] text-white shadow-[0_6px_16px_-8px_rgba(140,66,38,0.8)]'
+                : 'glass-quiet text-ink-600',
             )}
           >
             {g.label}
@@ -59,7 +61,7 @@ export function OrderList({
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="Search by PR / PO / DV number or purpose"
-        className="w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand"
+        className="w-full rounded-xl border border-[rgba(120,80,50,0.18)] bg-[rgba(255,252,247,0.78)] px-3.5 py-2.5 text-sm outline-none backdrop-blur-sm transition focus:border-brand/60 focus:bg-[rgba(255,252,247,0.95)]"
       />
 
       {rows.length === 0 ? (

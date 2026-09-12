@@ -45,7 +45,7 @@ export function InstallPrompt() {
   if (!deferred && !iosHint) return null
 
   return (
-    <div className="no-print fixed inset-x-3 bottom-20 z-40 rounded-2xl border border-ink-100 bg-white p-4 shadow-lg md:left-auto md:right-4 md:w-80">
+    <div className="no-print glass-strong glass-sheen fixed inset-x-3 bottom-24 z-40 rounded-3xl p-4 md:bottom-6 md:left-auto md:right-4 md:w-80">
       <p className="text-sm font-bold text-ink-900">Install GridSupply</p>
       <p className="mt-1 text-xs text-ink-400">
         {iosHint

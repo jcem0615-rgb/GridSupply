@@ -128,7 +128,9 @@ export function TemplateCustomizer() {
             onClick={() => setDocType(d)}
             className={cx(
               'rounded-full px-3.5 py-1.5 text-xs font-bold transition',
-              docType === d ? 'bg-brand text-white' : 'border border-ink-100 bg-white text-ink-400',
+              docType === d
+                ? 'bg-gradient-to-b from-[#c2643f] to-[#a24e33] text-white shadow-[0_6px_16px_-8px_rgba(140,66,38,0.8)]'
+                : 'glass-quiet text-ink-600',
             )}
           >
             {DOC_TITLE[d]}
@@ -167,7 +169,7 @@ export function TemplateCustomizer() {
                   type="checkbox"
                   checked={draft.show_seal}
                   onChange={(e) => patch({ show_seal: e.target.checked })}
-                  className="h-4 w-4 accent-[#0f3d2e]"
+                  className="h-4 w-4 accent-[#b4593a]"
                 />
                 Show the school seal
               </label>

@@ -41,10 +41,10 @@ export function PhotoCapture({
     <div className={cx('space-y-3', className)}>
       {value ? (
         <div className="relative overflow-hidden rounded-xl border border-ink-200">
-          <img src={value.data_url} alt={value.name} className="max-h-64 w-full object-contain bg-ink-50" />
+          <img src={value.data_url} alt={value.name} className="max-h-64 w-full bg-[rgba(255,251,245,0.6)] object-contain" />
           <button
             onClick={() => onChange(null)}
-            className="absolute right-2 top-2 rounded-lg bg-white/90 px-2.5 py-1 text-xs font-bold text-red-600 shadow"
+            className="absolute right-2 top-2 rounded-lg bg-[rgba(255,251,245,0.92)] px-2.5 py-1 text-xs font-bold text-[#a13a33] shadow backdrop-blur"
           >
             Remove
           </button>

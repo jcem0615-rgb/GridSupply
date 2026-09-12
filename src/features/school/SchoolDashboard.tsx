@@ -96,7 +96,7 @@ export function SchoolDashboard() {
         {(orders ?? []).length === 0 ? (
           <Empty
             title="No purchase requests yet"
-            hint="Start with a Purchase Request — the Principal approves it, then the BAC issues a PO to your supplier."
+            hint="Start with a Purchase Request, approve it, then issue the Purchase Order to your supplier."
             action={
               can(profile.role, 'pr.create') ? (
                 <Link to="/school/new">

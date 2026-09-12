@@ -28,8 +28,8 @@ export function OfflineBar() {
 
   return (
     <div
-      className={`no-print px-4 py-2 text-center text-xs font-semibold ${
-        online ? 'bg-amber-100 text-amber-900' : 'bg-ink-800 text-white'
+      className={`no-print px-4 py-2 text-center text-xs font-semibold backdrop-blur-md ${
+        online ? 'bg-[rgba(214,158,58,0.28)] text-[#6d4a0e]' : 'bg-[rgba(54,42,32,0.92)] text-ink-50'
       }`}
     >
       {!online && <>Offline — work is saved on this device and will sync automatically. </>}

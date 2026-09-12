@@ -76,7 +76,7 @@ docs/           01–09, read in order
 | `npm run build` | Typecheck and production build |
 | `npm run preview` | Serve the build (needed to exercise the service worker) |
 | `npm run lint` | oxlint |
-| `npm run icons` | Regenerate PWA icons from `public/icons/icon.svg` |
+| `npm run icons` | Regenerate every launcher icon from `public/icons/logo-mark.svg` |
 | `npm run smoke` | Drive all nine lifecycle steps across the three portals in a real browser |
 | `npm run pwa-check` | Verify service-worker control, offline boot and offline capture |
 
