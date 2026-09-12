@@ -19,6 +19,7 @@ const BASE = process.env.SMOKE_BASE ?? 'http://localhost:4173'
 const shots = process.env.SMOKE_SHOTS ?? 'smoke-screenshots'
 mkdirSync(shots, { recursive: true })
 const errors = []
+let tempPassword = ''
 
 const browser = await chromium.launch(
   process.env.SMOKE_CHROME ? { executablePath: process.env.SMOKE_CHROME } : {},
@@ -256,8 +257,78 @@ try {
     await page.screenshot({ path: `${shots}/supplier-billing.png`, fullPage: true })
   })
 
+  await step('supplier owner manages their own team only', async () => {
+    await page.goto(BASE + '/supplier/team')
+    await page.waitForSelector('text=Marites Delos Reyes')
+    await page.waitForSelector('text=Jayson Bautista')
+    const body = await page.locator('body').innerText()
+    /* School accounts must never appear in a supplier's team list. */
+    if (/Elena Villanueva|Jose Cruz/.test(body)) throw new Error('cross-tenant account leaked into supplier team')
+  })
+
+  await step('supplier owner resets an employee password', async () => {
+    const row = page.locator('li', { hasText: 'Jayson Bautista' }).first()
+    await row.getByRole('button', { name: 'Reset password' }).click()
+    await page.getByRole('button', { name: 'Reset password', exact: true }).last().click()
+    await page.waitForSelector('text=Temporary password')
+    const temp = (await page.locator('.font-mono').first().innerText()).trim()
+    if (!/^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(temp)) throw new Error(`bad temp password: ${temp}`)
+    await page.getByRole('button', { name: 'Done' }).click()
+    await page.waitForSelector('text=must change password')
+    tempPassword = temp
+  })
+
+  await step('the reset employee is forced to change password on sign-in', async () => {
+    await signOut()
+    await page.goto(BASE + '/login')
+    await page.getByRole('button', { name: /Jayson Bautista/ }).click()
+    await page.waitForURL(/change-password/)
+    await page.waitForSelector('text=Choose a new password')
+    const inputs = page.locator('input[type="password"]')
+    await inputs.nth(0).fill('Supplies2026')
+    await inputs.nth(1).fill('Supplies2026')
+    await page.getByRole('button', { name: 'Set password' }).click()
+    await page.waitForURL(/\/supplier$/)
+  })
+
+  await step('the new password works on the sign-in form', async () => {
+    await signOut()
+    await page.getByPlaceholder('you@school.deped.gov.ph').fill('jayson@northgate.ph')
+    await page.locator('input[type="password"]').fill('Supplies2026')
+    await page.getByRole('button', { name: 'Sign in' }).click()
+    await page.waitForURL(/\/supplier$/)
+  })
+
+  await step('the old temporary password no longer works', async () => {
+    await signOut()
+    await page.getByPlaceholder('you@school.deped.gov.ph').fill('jayson@northgate.ph')
+    await page.locator('input[type="password"]').fill(tempPassword)
+    await page.getByRole('button', { name: 'Sign in' }).click()
+    await page.waitForSelector('text=Incorrect password')
+  })
+
+  await step('owner can reset a school principal', async () => {
+    await signInAs('Jose Cruz')
+    await page.goto(BASE + '/owner/accounts')
+    await page.getByRole('button', { name: 'people' }).click()
+    const row = page.locator('li', { hasText: 'Elena Villanueva' }).first()
+    await row.getByRole('button', { name: 'Reset password' }).click()
+    await page.getByRole('button', { name: 'Reset password', exact: true }).last().click()
+    await page.waitForSelector('text=Temporary password')
+    await page.screenshot({ path: `${shots}/owner-reset-password.png` })
+    await page.getByRole('button', { name: 'Done' }).click()
+    await page.waitForSelector('text=must change password')
+  })
+
   await step('template customizer renders a live preview', async () => {
     await signOut(); await signInAs('Dr. Elena Villanueva')
+    /* That reset forces a password change before anything else is reachable. */
+    await page.waitForURL(/change-password/)
+    const pw = page.locator('input[type="password"]')
+    await pw.nth(0).fill('Caloocan2026')
+    await pw.nth(1).fill('Caloocan2026')
+    await page.getByRole('button', { name: 'Set password' }).click()
+    await page.waitForURL(/\/school$/)
     await page.goto(BASE + '/school/templates')
     await page.waitForSelector('text=Republic of the Philippines')
     await page.locator('input[placeholder="Header line 1"]').fill('REPUBLIC OF THE PHILIPPINES')

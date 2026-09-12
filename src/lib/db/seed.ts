@@ -62,6 +62,12 @@ const profile = (
   position_title,
   status: 'active',
   created_at: nowIso(),
+  password_hash: null,
+  password_salt: null,
+  must_change_password: false,
+  password_updated_at: null,
+  password_reset_by: null,
+  password_reset_at: null,
 })
 
 export const SEED_PROFILES: Profile[] = [

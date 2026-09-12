@@ -59,13 +59,13 @@ src/
   features/
     auth/       login and demo role picker
     school/     dashboard · PR wizard · orders · print-template customiser
-    supplier/   dashboard · catalog with markup slider · orders · billing
+    supplier/   dashboard · catalog with markup slider · orders · billing · team
     owner/      dashboard · accounts CRUD · payment methods · payment review queue · branding
     shared/     order detail · lifecycle actions · order chat
     print/      PR · PO · IAR · DV · BIR 2307 sheets
   components/   UI kit · layout · offline bar · install prompt · camera capture
 supabase/       schema.sql (tables, RLS, storage, auth trigger) · seed.sql
-docs/           01–08, read in order
+docs/           01–09, read in order
 ```
 
 ## Scripts

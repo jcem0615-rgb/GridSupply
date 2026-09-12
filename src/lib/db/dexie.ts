@@ -91,6 +91,25 @@ export class GridSupplyDB extends Dexie {
             delete row.method
           })
       })
+
+    /**
+     * v4 adds credential fields. Rows written by earlier versions simply lack
+     * them, and `password_hash: null` is what "no password set yet" means, so
+     * normalise rather than leaving the fields undefined.
+     */
+    this.version(4).upgrade(async (tx) => {
+      await tx
+        .table('profiles')
+        .toCollection()
+        .modify((row: Record<string, unknown>) => {
+          row.password_hash ??= null
+          row.password_salt ??= null
+          row.must_change_password ??= false
+          row.password_updated_at ??= null
+          row.password_reset_by ??= null
+          row.password_reset_at ??= null
+        })
+    })
   }
 }
 

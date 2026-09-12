@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { db } from '../lib/db/dexie'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
+import { checkPassword } from '../lib/accounts'
 import type { Profile } from '../types'
 
 interface AuthState {
@@ -34,6 +35,12 @@ export const useAuth = create<AuthState>()(
         if (!isSupabaseConfigured || !supabase) {
           const local = await db.profiles.where('email').equals(email).first()
           if (!local) return 'No account found for that email.'
+          if (local.status === 'stopped') return 'This account has been stopped.'
+          /* null means no password has ever been set (a seeded demo account),
+             so the picker below is the only way in for it. */
+          const ok = await checkPassword(local, password)
+          if (ok === false) return 'Incorrect password.'
+          if (ok === null) return 'No password set for this account — use the demo picker, or ask an admin to reset it.'
           set({ profile: local })
           return null
         }

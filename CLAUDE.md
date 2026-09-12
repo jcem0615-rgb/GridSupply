@@ -43,6 +43,7 @@ separate deployments.
 | 6 Order chat | `src/features/shared/OrderChat.tsx` |
 | 7 PWA offline | `public/sw.js`, `src/lib/sync.ts`, `src/lib/db/repo.ts` |
 | 8 Print templates | `src/features/school/TemplateCustomizer.tsx` |
+| — Accounts & auth | `src/lib/accounts.ts`, `src/lib/auth/password.ts`, `src/features/supplier/TeamPage.tsx` |
 
 `npm run smoke` walks the whole lifecycle in a real browser and is the fastest way to check
 you have not broken the critical path.
@@ -66,6 +67,11 @@ you have not broken the critical path.
   are an audit trail for public funds. The Owner Portal blocks the delete and points at
   `stopped`, which revokes access and is reversible. A tenant with no orders deletes, and
   its people cascade with it.
+- **Password resets follow the tenant boundary.** The Owner resets anyone; a Supplier
+  Owner resets only accounts carrying their own `supplier_id`. A supplier resetting a
+  school Principal would hand a vendor the account that approves their own POs, so it is
+  refused in `canResetPasswordFor()`, in the Team page query, and in RLS (both `USING` and
+  `WITH CHECK`). Reasoning in `docs/09`.
 - **Payment methods are data.** The owner publishes GCash / Maya / bank accounts (with an
   optional QR upload) and suppliers pay into those; nothing about the destination account
   is hardcoded. Payments snapshot `method_label` so history survives a method being
@@ -81,9 +87,11 @@ you have not broken the critical path.
   written but have not been exercised against a live database.
 - **Web Push has no Edge Function yet.** The service worker handles `push` and
   `notificationclick`; the sender and the subscription table are still to build.
-- **Supplier employee invites** — `supplier.staff` is defined in the permission matrix but
-  there is no invite UI yet. The Owner Portal can create supplier employees in the meantime
-  (Accounts → People), which covers the need without a self-serve invite flow.
+- **Admin-set passwords need an Edge Function.** Setting another user's password in
+  Supabase requires the `service_role` key, which must never reach the browser. Local mode
+  hashes in the browser and the Supabase path currently sends a reset email; the
+  service-role Edge Function is still to build. `must_change_password` and the audit
+  columns are already in the schema for it. See `docs/09`.
 - **Multi-district / division hierarchy** — out of scope for v1. Flag if the user asks for
   division-level dashboards; `schools.division` and `.district` are already captured.
 - **WebUSB / thermal printing** — not applicable to this spec, deliberately skipped.

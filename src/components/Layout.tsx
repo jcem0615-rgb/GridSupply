@@ -42,6 +42,7 @@ const NAV: Record<Portal, NavItem[]> = {
     { to: '/supplier/orders', label: 'Orders', icon: I.doc },
     { to: '/supplier/catalog', label: 'Catalog', icon: I.box },
     { to: '/supplier/billing', label: 'Billing', icon: I.card },
+    { to: '/supplier/team', label: 'Team', icon: I.users },
   ],
   owner: [
     { to: '/owner', label: 'Dashboard', icon: I.home },

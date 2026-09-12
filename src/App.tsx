@@ -4,12 +4,14 @@ import { useAuth } from './store/auth'
 import { ROLE_PORTAL, isKnownRole, type Portal } from './types'
 import { Layout } from './components/Layout'
 import { LoginPage } from './features/auth/LoginPage'
+import { ChangePasswordPage } from './features/auth/ChangePasswordPage'
 import { SchoolDashboard } from './features/school/SchoolDashboard'
 import { PRWizard } from './features/school/PRWizard'
 import { SchoolOrders } from './features/school/SchoolOrders'
 import { TemplateCustomizer } from './features/school/TemplateCustomizer'
 import { SupplierDashboard } from './features/supplier/SupplierDashboard'
 import { SupplierOrders } from './features/supplier/SupplierOrders'
+import { TeamPage } from './features/supplier/TeamPage'
 import { CatalogPage } from './features/supplier/CatalogPage'
 import { BillingPage } from './features/supplier/BillingPage'
 import { OwnerDashboard } from './features/owner/OwnerDashboard'
@@ -26,6 +28,8 @@ function Guard({ portal, children }: { portal: Portal; children: React.ReactNode
   if (!profile || !isKnownRole(profile.role)) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
+  /* An admin reset blocks everything until a new password is chosen. */
+  if (profile.must_change_password) return <Navigate to="/change-password" replace />
   const mine = ROLE_PORTAL[profile.role]
   if (mine !== portal) return <Navigate to={`/${mine}`} replace />
   return <Layout>{children}</Layout>
@@ -34,6 +38,7 @@ function Guard({ portal, children }: { portal: Portal; children: React.ReactNode
 function AnyPortal({ children }: { children: React.ReactNode }) {
   const profile = useAuth((s) => s.profile)
   if (!profile || !isKnownRole(profile.role)) return <Navigate to="/login" replace />
+  if (profile.must_change_password) return <Navigate to="/change-password" replace />
   return <Layout>{children}</Layout>
 }
 
@@ -82,11 +87,17 @@ export default function App() {
       <Route path="/supplier/orders" element={<Guard portal="supplier"><SupplierOrders /></Guard>} />
       <Route path="/supplier/catalog" element={<Guard portal="supplier"><CatalogPage /></Guard>} />
       <Route path="/supplier/billing" element={<Guard portal="supplier"><BillingPage /></Guard>} />
+      <Route path="/supplier/team" element={<Guard portal="supplier"><TeamPage /></Guard>} />
 
       <Route path="/owner" element={<Guard portal="owner"><OwnerDashboard /></Guard>} />
       <Route path="/owner/accounts" element={<Guard portal="owner"><AccountsPage /></Guard>} />
       <Route path="/owner/payments" element={<Guard portal="owner"><PaymentsPage /></Guard>} />
       <Route path="/owner/branding" element={<Guard portal="owner"><BrandingPage /></Guard>} />
+
+      <Route
+        path="/change-password"
+        element={profile && isKnownRole(profile.role) ? <ChangePasswordPage /> : <Navigate to="/login" replace />}
+      />
 
       <Route path="/orders/:id" element={<AnyPortal><OrderDetail /></AnyPortal>} />
 

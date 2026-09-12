@@ -6,6 +6,7 @@ import { resetAll } from '../../lib/db/seed'
 import { formatDate, nowIso, uuid } from '../../lib/ids'
 import { useAuth } from '../../store/auth'
 import { Badge, Button, Card, Empty, Field, Input, Modal, Select, cx } from '../../components/ui'
+import { ResetPasswordDialog } from '../../components/ResetPasswordDialog'
 import { ROLE_LABEL, type AccountStatus, type Profile, type Role, type School, type Supplier } from '../../types'
 
 type Tab = 'schools' | 'suppliers' | 'people'
@@ -57,6 +58,12 @@ const blankProfile = (): Profile => ({
   position_title: '',
   status: 'active',
   created_at: nowIso(),
+  password_hash: null,
+  password_salt: null,
+  must_change_password: false,
+  password_updated_at: null,
+  password_reset_by: null,
+  password_reset_at: null,
 })
 
 export function AccountsPage() {
@@ -67,6 +74,7 @@ export function AccountsPage() {
   const [supplier, setSupplier] = useState<Supplier | null>(null)
   const [person, setPerson] = useState<Profile | null>(null)
   const [toDelete, setToDelete] = useState<{ table: Tab; id: string; name: string } | null>(null)
+  const [resetting, setResetting] = useState<Profile | null>(null)
   const [busy, setBusy] = useState(false)
 
   const schools = useLiveQuery(() => db.schools.toArray(), [], [])
@@ -275,13 +283,22 @@ export function AccountsPage() {
                   <p className="truncate text-sm font-bold text-ink-900">
                     {p.full_name}
                     {p.id === me.id && <span className="ml-2 text-[10px] font-bold uppercase text-ink-400">you</span>}
+                    {p.must_change_password && (
+                      <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
+                        must change password
+                      </span>
+                    )}
                   </p>
                   <p className="truncate text-xs text-ink-400">
                     {ROLE_LABEL[p.role]} · {p.email}
+                    {p.password_updated_at ? ' · password set' : ' · no password set'}
                   </p>
                 </div>
                 <Badge tone={TONE[p.status]}>{p.status}</Badge>
                 <Controls table="profiles" id={p.id} status={p.status} />
+                <Button variant="secondary" onClick={() => setResetting(p)}>
+                  Reset password
+                </Button>
                 <RowActions
                   onEdit={() => setPerson(p)}
                   onDelete={() => setToDelete({ table: 'people', id: p.id, name: p.full_name })}
@@ -291,6 +308,8 @@ export function AccountsPage() {
           </ul>
         </Card>
       )}
+
+      <ResetPasswordDialog target={resetting} onClose={() => setResetting(null)} />
 
       {/* ---- School editor ---- */}
       <Modal open={!!school} onClose={() => setSchool(null)} title={exists(schools, school?.id ?? '') ? 'Edit school' : 'Add school'}>

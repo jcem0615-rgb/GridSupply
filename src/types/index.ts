@@ -35,6 +35,15 @@ export interface Profile {
   position_title: string | null
   status: AccountStatus
   created_at: string
+  /* Credentials — only ever a PBKDF2 digest, never a password. Null until one
+     is set; unused when Supabase Auth is wired. */
+  password_hash: string | null
+  password_salt: string | null
+  /** Set by an admin reset; forces a change on next sign-in. */
+  must_change_password: boolean
+  password_updated_at: string | null
+  password_reset_by: string | null
+  password_reset_at: string | null
 }
 
 export interface School {

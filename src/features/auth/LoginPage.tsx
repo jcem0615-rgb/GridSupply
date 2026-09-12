@@ -82,7 +82,7 @@ export function LoginPage() {
             </form>
           </Card>
 
-          <Card title="Demo accounts" subtitle="One tap to enter any role and portal">
+          <Card title="Demo accounts" subtitle="One tap to enter any role and portal — no password required">
             <ul className="space-y-2">
               {(profiles ?? []).map((p) => (
                 <li key={p.id}>
@@ -101,9 +101,15 @@ export function LoginPage() {
                       <span className="block truncate text-sm font-semibold text-ink-900">{p.full_name}</span>
                       <span className="block truncate text-[11px] text-ink-400">{ROLE_LABEL[p.role]}</span>
                     </span>
-                    <span className={cx('rounded-full px-2 py-0.5 text-[10px] font-bold uppercase', PORTAL_TONE[ROLE_PORTAL[p.role]])}>
-                      {ROLE_PORTAL[p.role]}
-                    </span>
+                    {p.must_change_password ? (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-800">
+                        reset
+                      </span>
+                    ) : (
+                      <span className={cx('rounded-full px-2 py-0.5 text-[10px] font-bold uppercase', PORTAL_TONE[ROLE_PORTAL[p.role]])}>
+                        {ROLE_PORTAL[p.role]}
+                      </span>
+                    )}
                   </button>
                 </li>
               ))}

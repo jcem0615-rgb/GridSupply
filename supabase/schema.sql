@@ -68,6 +68,12 @@ create table profiles (
   position_title text,
   status account_status not null default 'active',
   created_at timestamptz not null default now(),
+  -- Credentials live in Supabase Auth; these track admin-initiated resets so
+  -- the UI can force a change and show who reset whom. Never a password.
+  must_change_password boolean not null default false,
+  password_updated_at timestamptz,
+  password_reset_by uuid,
+  password_reset_at timestamptz,
   -- A profile belongs to exactly one tenant, except the platform owner.
   constraint profile_tenant_exclusive check (
     (role = 'owner' and school_id is null and supplier_id is null)
@@ -310,6 +316,25 @@ create policy profiles_select on profiles for select using (
 );
 create policy profiles_update_self on profiles for update using (id = auth.uid()) with check (id = auth.uid());
 create policy profiles_owner_write on profiles for all using (is_owner()) with check (is_owner());
+
+-- A supplier owner administers accounts inside their own supplier and nowhere
+-- else. Without the supplier_id check on BOTH sides, a supplier could move a
+-- school Principal into their tenant and then reset it — so the USING clause
+-- (the row as it is) and the WITH CHECK clause (the row as it would become)
+-- both have to match their own supplier.
+create policy profiles_supplier_owner_write on profiles for all
+  using (
+    auth_role() = 'supplier_owner'
+    and supplier_id is not null
+    and supplier_id = auth_supplier_id()
+  )
+  with check (
+    auth_role() = 'supplier_owner'
+    and supplier_id is not null
+    and supplier_id = auth_supplier_id()
+    and school_id is null
+    and role in ('supplier_owner', 'supplier_employee')
+  );
 
 -- schools / suppliers
 create policy schools_select on schools for select using (is_owner() or id = auth_school_id());

@@ -26,6 +26,9 @@ export const PERMISSIONS = {
   'catalog.manage': ['supplier_owner', 'supplier_employee'],
   'catalog.pricing': ['supplier_owner'],
   'supplier.staff': ['supplier_owner'],
+  /* Coarse gate for showing reset UI at all; canResetPasswordFor() in
+     lib/accounts.ts decides which specific accounts are in reach. */
+  'password.reset': ['owner', 'supplier_owner'],
   'subscription.pay': ['supplier_owner'],
   'subscription.review': ['owner'],
   'payment.methods.manage': ['owner'],
