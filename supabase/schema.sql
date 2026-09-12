@@ -273,6 +273,24 @@ create table branding (
   unique (scope, scope_id)
 );
 
+-- A supplier's own record of each school it serves. Kept apart from `schools`
+-- because the school's name, TIN and address print on government documents and
+-- are the school's to maintain; what a supplier owns is the relationship.
+create table supplier_clients (
+  id text primary key,
+  supplier_id uuid not null references suppliers (id) on delete cascade,
+  school_id uuid not null references schools (id) on delete cascade,
+  contact_name text not null default '',
+  contact_number text not null default '',
+  contact_email text not null default '',
+  delivery_notes text not null default '',
+  notes text not null default '',
+  updated_at timestamptz not null default now(),
+  unique (supplier_id, school_id)
+);
+
+create index on supplier_clients (supplier_id);
+
 create table print_templates (
   id uuid primary key default gen_random_uuid(),
   school_id uuid not null references schools (id) on delete cascade,
@@ -306,6 +324,7 @@ alter table payment_methods       enable row level security;
 alter table tax_config            enable row level security;
 alter table branding              enable row level security;
 alter table print_templates       enable row level security;
+alter table supplier_clients      enable row level security;
 
 -- profiles: read yourself and your own tenant's staff; owner reads all.
 create policy profiles_select on profiles for select using (
@@ -422,6 +441,12 @@ create policy tax_write on tax_config for all using (is_owner()) with check (is_
 
 create policy branding_select on branding for select using (auth.uid() is not null);
 create policy branding_write on branding for all using (is_owner()) with check (is_owner());
+
+-- The notes are the supplier's private CRM. A school must not read what a
+-- vendor writes about it, so there is no school-side select policy at all.
+create policy supplier_clients_all on supplier_clients for all
+  using (supplier_id = auth_supplier_id())
+  with check (supplier_id = auth_supplier_id());
 
 create policy templates_select on print_templates for select using (
   is_owner() or school_id = auth_school_id()

@@ -15,6 +15,7 @@ The authoritative artifact is `supabase/schema.sql`. This document explains its 
 | `payment_methods` | Accounts the owner publishes for suppliers to pay into |
 | `subscription_payments` | Supplier proof-of-payment submissions and owner review |
 | `tax_config` | VAT / EWT / final-VAT rates and ATC codes as **data** |
+| `supplier_clients` | A supplier's private notes on each school it serves |
 | `branding`, `print_templates` | Per-tenant visual and document customisation |
 
 ## Why one `orders` row, not five document tables
@@ -48,6 +49,16 @@ and status not in ('draft','pr_submitted','pr_approved','pr_rejected')
 
 Child tables (`order_lines`, `order_events`, `messages`) inherit that decision through
 `can_see_order(uuid)` rather than repeating it, so the rule has exactly one definition.
+
+## Supplier clients
+`supplier_clients` is the supplier's own CRM record for a school: contact person, delivery
+notes, internal notes. It is deliberately **not** columns on `schools` — the school's name,
+TIN and address print on the PO, DV and BIR 2307, so they are the school's to maintain and
+a supplier must never write them.
+
+The policy is one-sided on purpose: `supplier_clients_all` grants the owning supplier full
+access and there is **no school-side select policy at all**, so a school cannot read what a
+vendor has written about it.
 
 ## Payment methods
 The destination account for the subscription fee is data, not configuration. The owner

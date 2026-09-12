@@ -9,6 +9,7 @@ import type {
   OrderLine,
   OutboxEntry,
   PaymentMethod,
+  SupplierClient,
   ThreadRead,
   PrintTemplate,
   Profile,
@@ -38,6 +39,7 @@ export class GridSupplyDB extends Dexie {
   tax_config!: Table<TaxConfig, string>
   branding!: Table<BrandingSettings, string>
   print_templates!: Table<PrintTemplate, string>
+  supplier_clients!: Table<SupplierClient, string>
   thread_reads!: Table<ThreadRead, string>
   outbox!: Table<OutboxEntry, number>
 
@@ -120,6 +122,13 @@ export class GridSupplyDB extends Dexie {
      * that carries purchase orders.
      */
     this.version(5).stores({ thread_reads: 'id, profile_id, order_id' })
+
+    /**
+     * v6 adds the supplier's own notes about each school it serves. Unlike
+     * thread_reads this is real business data, so it goes through the outbox
+     * like everything else.
+     */
+    this.version(6).stores({ supplier_clients: 'id, supplier_id, school_id' })
   }
 }
 

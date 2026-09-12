@@ -12,6 +12,8 @@ import { TemplateCustomizer } from './features/school/TemplateCustomizer'
 import { SupplierDashboard } from './features/supplier/SupplierDashboard'
 import { SupplierOrders } from './features/supplier/SupplierOrders'
 import { TeamPage } from './features/supplier/TeamPage'
+import { ClientsPage } from './features/supplier/ClientsPage'
+import { ClientDetailPage } from './features/supplier/ClientDetailPage'
 import { CatalogPage } from './features/supplier/CatalogPage'
 import { BillingPage } from './features/supplier/BillingPage'
 import { OwnerDashboard } from './features/owner/OwnerDashboard'
@@ -89,6 +91,8 @@ export default function App() {
       <Route path="/supplier/catalog" element={<Guard portal="supplier"><CatalogPage /></Guard>} />
       <Route path="/supplier/billing" element={<Guard portal="supplier"><BillingPage /></Guard>} />
       <Route path="/supplier/team" element={<Guard portal="supplier"><TeamPage /></Guard>} />
+      <Route path="/supplier/clients" element={<Guard portal="supplier"><ClientsPage /></Guard>} />
+      <Route path="/supplier/clients/:schoolId" element={<Guard portal="supplier"><ClientDetailPage /></Guard>} />
 
       <Route path="/owner" element={<Guard portal="owner"><OwnerDashboard /></Guard>} />
       <Route path="/owner/accounts" element={<Guard portal="owner"><AccountsPage /></Guard>} />

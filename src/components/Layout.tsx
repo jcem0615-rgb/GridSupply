@@ -12,6 +12,8 @@ import { InstallPrompt } from './InstallPrompt'
 interface NavItem {
   to: string
   label: string
+  /** Shorter label for the bottom bar, where six tabs must fit 390px. */
+  short?: string
   icon: ReactNode
 }
 
@@ -25,6 +27,7 @@ const I = {
   home: icon('M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5'),
   doc: icon('M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zm0 0v5h5M9 13h6M9 17h4'),
   box: icon('M3 8 12 3l9 5v8l-9 5-9-5zM3 8l9 5 9-5M12 13v8'),
+  school: icon('M3 21h18M5 21V10l7-5 7 5v11M9 21v-5h6v5'),
   card: icon('M2 7h20v11H2zM2 11h20'),
   users: icon('M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 20v-2a4 4 0 0 0-3-3.9'),
   brush: icon('M9.5 14.5 3 21M14 3l7 7-7 4-4-4z'),
@@ -33,14 +36,15 @@ const I = {
 
 const NAV: Record<Portal, NavItem[]> = {
   school: [
-    { to: '/school', label: 'Dashboard', icon: I.home },
+    { to: '/school', label: 'Dashboard', short: 'Home', icon: I.home },
     { to: '/school/orders', label: 'Requests', icon: I.doc },
     { to: '/school/new', label: 'New PR', icon: I.box },
     { to: '/school/templates', label: 'Templates', icon: I.layout },
   ],
   supplier: [
-    { to: '/supplier', label: 'Dashboard', icon: I.home },
+    { to: '/supplier', label: 'Dashboard', short: 'Home', icon: I.home },
     { to: '/supplier/orders', label: 'Orders', icon: I.doc },
+    { to: '/supplier/clients', label: 'Clients', icon: I.school },
     { to: '/supplier/catalog', label: 'Catalog', icon: I.box },
     { to: '/supplier/billing', label: 'Billing', icon: I.card },
     { to: '/supplier/team', label: 'Team', icon: I.users },
@@ -153,7 +157,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <main className="relative mx-auto w-full max-w-6xl flex-1 px-4 py-5 pb-32 md:pb-10">{children}</main>
 
       <nav className="no-print fixed inset-x-0 bottom-0 z-30 px-3 pb-[calc(0.6rem+var(--safe-bottom))] md:hidden">
-        <div className="glass glass-sheen mx-auto flex max-w-lg overflow-hidden rounded-2xl">
+        <div className="scroll-thin glass glass-sheen mx-auto flex max-w-lg overflow-x-auto rounded-2xl">
           {items.map((it) => (
             <NavLink
               key={it.to}
@@ -161,13 +165,13 @@ export function Layout({ children }: { children: ReactNode }) {
               end={it.to.split('/').length === 2}
               className={({ isActive }) =>
                 cx(
-                  'flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-semibold transition',
+                  'flex flex-1 shrink-0 basis-0 flex-col items-center gap-1 px-1 py-2.5 text-[10px] font-semibold transition',
                   isActive ? 'bg-[rgba(180,89,58,0.12)] text-brand' : 'text-ink-400',
                 )
               }
             >
               {it.icon}
-              {it.label}
+              <span className="whitespace-nowrap">{it.short ?? it.label}</span>
             </NavLink>
           ))}
         </div>

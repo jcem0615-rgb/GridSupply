@@ -59,7 +59,7 @@ src/
   features/
     auth/       login and demo role picker
     school/     dashboard · PR wizard · orders · print-template customiser
-    supplier/   dashboard · catalog with markup slider · orders · billing · team
+    supplier/   dashboard · catalog with markup slider · orders · clients · billing · team
     owner/      dashboard · accounts CRUD · payment methods · payment review queue · branding
     shared/     order detail · lifecycle actions · order chat
     print/      PR · PO · IAR · DV · BIR 2307 sheets
@@ -81,13 +81,14 @@ docs/           01–09, read in order
 | `npm run pwa-check` | Verify service-worker control, offline boot and offline capture |
 | `npm run auth-check` | Verify the password reveal toggle and remember-me storage |
 | `npm run chat-check` | Verify the order thread is reachable and usable on mobile |
+| `npm run clients-check` | Verify the supplier clients book and its tenant boundaries |
 
 Both browser checks need a **production** build served by `preview` — the service worker
 does not register in dev:
 
 ```bash
 npm run build && npm run preview &
-npm run smoke && npm run pwa-check && npm run auth-check && npm run chat-check
+npm run smoke && npm run pwa-check && npm run auth-check && npm run chat-check && npm run clients-check
 ```
 
 ## Deployment

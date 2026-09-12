@@ -16,7 +16,8 @@ capture in the field.
    template customisation, cheque photo capture. The Custodian, BAC and Disbursing Officer
    are document signatories, not users.
 3. **Supplier Portal** — Supplier Owner + employee sub-accounts: catalog, markup pricing,
-   tax preview, cheque/2307 downloads, subscription fee payment.
+   tax preview, cheque/2307 downloads, subscription fee payment, and a Clients book of the
+   schools they serve.
 
 All three share one Supabase project, separated entirely by Row Level Security — never by
 separate deployments.
@@ -99,6 +100,12 @@ Warm, cozy palette on glassmorphic surfaces. `src/index.css` holds the whole thi
   school Principal would hand a vendor the account that approves their own POs, so it is
   refused in `canResetPasswordFor()`, in the Team page query, and in RLS (both `USING` and
   `WITH CHECK`). Reasoning in `docs/09`.
+- **A supplier's clients are schools that issued them a PO**, not every school on the
+  platform — a school browsing the catalog is not yet a client. The school's own record
+  (name, TIN, address) is read-only there because it prints on the PO, DV and 2307 and is
+  the school's to maintain; what a supplier edits is the relationship — contact person,
+  delivery notes, internal notes — held in `supplier_clients` and readable only by that
+  supplier, never by the school.
 - **The order thread is reachable from three places** — a header messages button with an
   unread badge, a `/messages` list, and a badge on the order's Thread tab. The chat always
   worked; it was unreachable unless you already knew to open an order and click the third

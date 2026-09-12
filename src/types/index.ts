@@ -300,6 +300,26 @@ export interface PrintTemplate {
   updated_at: string
 }
 
+/**
+ * A supplier's own record about a school they serve.
+ *
+ * Deliberately separate from the `schools` row: the school's name, TIN and
+ * address are the school's own data and appear on government documents, so a
+ * supplier must never edit them. What a supplier owns is the relationship —
+ * who they call, where to drop off, what to remember next time.
+ */
+export interface SupplierClient {
+  id: string
+  supplier_id: string
+  school_id: string
+  contact_name: string
+  contact_number: string
+  contact_email: string
+  delivery_notes: string
+  notes: string
+  updated_at: string
+}
+
 /** Per-user, per-order "caught up to here" marker. Local-only; see dexie.ts. */
 export interface ThreadRead {
   id: string
