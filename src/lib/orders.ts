@@ -268,6 +268,17 @@ export const recordCheck = (id: string, a: Profile, checkNumber: string, photoId
     `Cheque ${checkNumber} released to supplier.`,
   )
 
+/** Lets the school attach or replace the cheque image after payment was recorded —
+ *  a cheque photographed in the field may arrive after the voucher was cut. */
+export const attachChequePhoto = (id: string, a: Profile, photoId: string, replacing: boolean) =>
+  patchOrder(
+    id,
+    a,
+    { check_photo_id: photoId },
+    null,
+    replacing ? 'Cheque photo replaced.' : 'Cheque photo attached.',
+  )
+
 export const issue2307 = (id: string, a: Profile) =>
   patchOrder(id, a, { bir_2307_issued: true }, 'paid', 'BIR Form 2307 issued to supplier.')
 

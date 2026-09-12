@@ -11,6 +11,7 @@ import { markThreadRead } from '../../lib/threads'
 import { Button, Card, Empty, StatusPill, cx } from '../../components/ui'
 import { OrderActions } from './OrderActions'
 import { OrderChat } from './OrderChat'
+import { ChequeCard } from './ChequeCard'
 import { PrintDoc, DOC_TITLE, type DocType } from '../print/PrintDocs'
 import { ORDER_FLOW, ROLE_PORTAL, type OrderStatus } from '../../types'
 
@@ -246,6 +247,8 @@ export function OrderDetail() {
                 </div>
               </div>
             </Card>
+
+            <ChequeCard order={order} tax={tax} />
 
             <Card title="Actions" subtitle="Only steps your role can take appear here">
               <OrderActions order={order} />

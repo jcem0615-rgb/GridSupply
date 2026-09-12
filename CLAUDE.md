@@ -117,6 +117,14 @@ Warm, cozy palette on glassmorphic surfaces. `src/index.css` holds the whole thi
   "Selected (n)" filter lets a buyer review picks without hunting pages. Server-side
   paging becomes worthwhile only once a tenant's catalog stops fitting in IndexedDB, which
   the offline layer requires it to do anyway.
+- **Order payment is cheque-only, by design.** A DepEd disbursement is released as a
+  cheque against the DV; there is no cash, transfer or e-wallet path in the workflow and
+  none should be added. The school captures the cheque image and **both parties download
+  it** — the supplier needs it with the DV and 2307 for their own books. Attaching the
+  photo after payment was recorded is supported, since a field photo often arrives after
+  the voucher was cut. `subscription_payments` is a different thing entirely: a supplier
+  paying the platform's SaaS fee, which is commercial, not government, and uses
+  `payment_methods`. See `docs/03`.
 - **Payment methods are data.** The owner publishes GCash / Maya / bank accounts (with an
   optional QR upload) and suppliers pay into those; nothing about the destination account
   is hardcoded. Payments snapshot `method_label` so history survives a method being

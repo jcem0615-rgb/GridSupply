@@ -15,6 +15,20 @@ for each transition is in `src/lib/permissions.ts`.
 | 8 | `dv_issued` | Principal | DV generated with the withholding breakdown |
 | 9 | `paid` → `archived` | Principal | Cheque recorded and photographed, BIR 2307 issued, transaction archived |
 
+## Payment is by cheque, and only by cheque
+A DepEd disbursement is released as a cheque against the Disbursement Voucher. There is no
+cash, transfer or e-wallet path in the order workflow, and none should be added — the
+voucher, the cheque number and the BIR 2307 are one chain an auditor follows end to end.
+
+The school captures the cheque image (`check_photo_id`), and **both parties can download
+it**: the supplier needs the cheque alongside the DV and the 2307 for their own books. The
+image can be attached after the payment was recorded, because a cheque photographed in the
+field often arrives later than the voucher was cut.
+
+Do not confuse this with `subscription_payments`, which is the supplier paying the platform
+its SaaS fee. That is a private commercial transaction between two businesses, not a
+government disbursement, and it uses the owner-published methods in `payment_methods`.
+
 ## Rules
 - **Transitions are one-way.** There is no "un-approve". A returned PR goes to `pr_rejected`
   and is edited and resubmitted; the audit trail keeps both attempts.
