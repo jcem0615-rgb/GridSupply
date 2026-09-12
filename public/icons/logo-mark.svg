@@ -1,23 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="GridSupply">
   <title>GridSupply</title>
+  <!--
+    Warm variant. The shapes and the value structure are unchanged from the
+    original blue mark — dark ring, light globe interior, mid-tone lattice,
+    bright accent arcs — only the hues move, so it still reads at 32px.
+    Terracotta / amber / olive: three warm hues far enough apart to stay
+    separable once the mark is the size of a favicon.
+  -->
   <defs>
     <linearGradient id="gsDeep" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#2C6FB0"/><stop offset="1" stop-color="#123F6E"/>
+      <stop offset="0" stop-color="#A85434"/><stop offset="1" stop-color="#5C2B18"/>
     </linearGradient>
-    <linearGradient id="gsCyan" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0" stop-color="#2A9FD8"/><stop offset="1" stop-color="#63C8F0"/>
+    <linearGradient id="gsLeaf" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#6F8A49"/><stop offset="1" stop-color="#9DB472"/>
     </linearGradient>
     <clipPath id="gsGlobe"><circle cx="248" cy="242" r="128"/></clipPath>
   </defs>
 
-  <!-- Globe: curved meridians over straight latitudes so it reads as a sphere
-       rather than as a flat lattice -->
   <g clip-path="url(#gsGlobe)">
-    <circle cx="248" cy="242" r="128" fill="#E8F3FC"/>
-    <g stroke="#4A8FC9" stroke-width="10" stroke-linecap="round" fill="none" opacity="0.9">
+    <circle cx="248" cy="242" r="128" fill="#FBEEDF"/>
+    <g stroke="#CE9066" stroke-width="10" stroke-linecap="round" fill="none" opacity="0.95">
       <path d="M116 178 H380 M110 242 H386 M116 306 H380"/>
     </g>
-    <g stroke="#2C6FB0" stroke-width="10" fill="none" opacity="0.9">
+    <g stroke="#AC6039" stroke-width="10" fill="none" opacity="0.92">
       <path d="M248 110 C 196 176 196 308 248 374"/>
       <path d="M248 110 C 300 176 300 308 248 374"/>
       <path d="M248 110 V 374"/>
@@ -26,33 +31,29 @@
     </g>
   </g>
 
-  <!-- Orbit arcs: deep sweep, gold crown, cyan tail -->
   <circle cx="248" cy="242" r="148" fill="none" stroke="url(#gsDeep)" stroke-width="26"
           stroke-linecap="round" stroke-dasharray="600 1000" transform="rotate(126 248 242)"/>
-  <circle cx="248" cy="242" r="174" fill="none" stroke="#F0B32A" stroke-width="21"
+  <circle cx="248" cy="242" r="174" fill="none" stroke="#E0A233" stroke-width="21"
           stroke-linecap="round" stroke-dasharray="290 1600" transform="rotate(-108 248 242)"/>
-  <circle cx="248" cy="242" r="174" fill="none" stroke="url(#gsCyan)" stroke-width="21"
+  <circle cx="248" cy="242" r="174" fill="none" stroke="url(#gsLeaf)" stroke-width="21"
           stroke-linecap="round" stroke-dasharray="250 1600" transform="rotate(34 248 242)"/>
 
-  <!-- Growth arrow, clear of the pencil so both stay legible -->
-  <path d="M300 336 L344 286 L374 312 L418 250" fill="none" stroke="url(#gsCyan)"
+  <path d="M300 336 L344 286 L374 312 L418 250" fill="none" stroke="url(#gsLeaf)"
         stroke-width="23" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M386 240 L432 232 L426 278 Z" fill="#2A9FD8"/>
+  <path d="M386 240 L432 232 L426 278 Z" fill="#6F8A49"/>
 
-  <!-- Pencil -->
   <g transform="rotate(40 300 236)">
-    <rect x="280" y="92" width="44" height="196" rx="6" fill="#F0B32A"/>
-    <rect x="280" y="92" width="15" height="196" fill="#F8D169"/>
-    <rect x="280" y="188" width="44" height="25" fill="#2A9FD8"/>
-    <path d="M280 92 L324 92 L302 44 Z" fill="#F5DCA8"/>
-    <path d="M291 66 L313 66 L302 44 Z" fill="#143C63"/>
-    <rect x="280" y="288" width="44" height="13" rx="4" fill="#D9971A"/>
+    <rect x="280" y="92" width="44" height="196" rx="6" fill="#E0A233"/>
+    <rect x="280" y="92" width="15" height="196" fill="#F2C86B"/>
+    <rect x="280" y="188" width="44" height="25" fill="#6F8A49"/>
+    <path d="M280 92 L324 92 L302 44 Z" fill="#F2DCB2"/>
+    <path d="M291 66 L313 66 L302 44 Z" fill="#4A2418"/>
+    <rect x="280" y="288" width="44" height="13" rx="4" fill="#C4851F"/>
   </g>
 
-  <!-- Open ledger: two pages meeting at a spine -->
-  <g stroke="#143C63" stroke-width="15" stroke-linejoin="round" fill="#FFFFFF">
+  <g stroke="#4A2418" stroke-width="15" stroke-linejoin="round" fill="#FFFBF5">
     <path d="M248 366 C 212 340 160 334 112 346 L112 398 C 160 388 212 394 248 420 Z"/>
     <path d="M248 366 C 284 340 336 334 384 346 L384 398 C 336 388 284 394 248 420 Z"/>
   </g>
-  <path d="M248 366 V 420" stroke="#143C63" stroke-width="14" stroke-linecap="round"/>
+  <path d="M248 366 V 420" stroke="#4A2418" stroke-width="14" stroke-linecap="round"/>
 </svg>

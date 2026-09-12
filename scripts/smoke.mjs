@@ -37,7 +37,10 @@ const step = async (label, fn) => {
 const signInAs = async (name) => {
   await page.goto(BASE + '/login')
   await page.getByRole('button', { name: new RegExp(name) }).click()
-  await page.waitForURL(/\/(school|supplier|owner)/)
+  /* An account flagged by an admin reset lands on the portal for one tick and
+     is then redirected to /change-password. Waiting only for the portal URL
+     races that redirect and fails intermittently, so accept either. */
+  await page.waitForURL(/\/(school|supplier|owner|change-password)/)
 }
 
 const signOut = async () => {

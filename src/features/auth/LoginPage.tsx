@@ -51,7 +51,7 @@ export function LoginPage() {
           </div>
           <h1 className="text-3xl font-black tracking-tight">
             <span className="text-white">Grid</span>
-            <span className="text-[#7fd2f4]">Supply</span>
+            <span className="text-[#eab765]">Supply</span>
           </h1>
           <p className="mt-1 text-sm text-white/70">
             Public school procurement — Purchase Request to BIR Form 2307.

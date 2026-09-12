@@ -84,7 +84,7 @@ export function Layout({ children }: { children: ReactNode }) {
             alt="GridSupply"
             width={36}
             height={36}
-            className="h-9 w-9 shrink-0 drop-shadow-[0_4px_10px_rgba(20,60,99,0.25)]"
+            className="h-9 w-9 shrink-0 drop-shadow-[0_4px_10px_rgba(92,43,24,0.28)]"
           />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-bold leading-tight text-ink-900">{tenant ?? 'GridSupply'}</p>

@@ -16,7 +16,7 @@ const mark = readFileSync('public/icons/logo-mark.svg', 'utf8')
   .replace(/<\?xml[^>]*\?>/, '')
   .replace(/<svg /, '<svg x="{{X}}" y="{{Y}}" width="{{W}}" height="{{W}}" ')
 
-const GROUND = '#F4FAFF'
+const GROUND = '#FBF3E8'
 
 const compose = (size, scale, radius) => {
   const w = Math.round(size * scale)

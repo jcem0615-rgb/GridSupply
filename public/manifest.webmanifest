@@ -6,7 +6,7 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f4faff",
+  "background_color": "#fbf3e8",
   "theme_color": "#f2ddc8",
   "categories": ["business", "productivity", "government"],
   "icons": [
