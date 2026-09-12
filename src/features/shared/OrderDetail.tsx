@@ -1,11 +1,13 @@
-import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { useState } from 'react'
 import { db } from '../../lib/db/dexie'
 import { useAuth } from '../../store/auth'
 import { computeTax, peso } from '../../lib/money'
 import { formatDate, formatDateTime } from '../../lib/ids'
 import { getTaxConfig } from '../../lib/db/seed'
+import { markThreadRead } from '../../lib/threads'
 import { Button, Card, Empty, StatusPill, cx } from '../../components/ui'
 import { OrderActions } from './OrderActions'
 import { OrderChat } from './OrderChat'
@@ -28,8 +30,12 @@ function availableDocs(status: OrderStatus): DocType[] {
 
 export function OrderDetail() {
   const { id = '' } = useParams()
+  const [params] = useSearchParams()
   const profile = useAuth((s) => s.profile)!
-  const [tab, setTab] = useState<(typeof TABS)[number]>('Summary')
+  /* ?tab=thread lets the Messages list link straight into the conversation. */
+  const [tab, setTab] = useState<(typeof TABS)[number]>(
+    params.get('tab') === 'thread' ? 'Thread' : 'Summary',
+  )
   const [doc, setDoc] = useState<DocType>('PR')
 
   const order = useLiveQuery(() => db.orders.get(id), [id])
@@ -47,6 +53,22 @@ export function OrderDetail() {
     [order?.school_id, doc],
   )
   const logo = useLiveQuery(async () => (await db.attachments.where('kind').equals('logo').toArray())[0], [])
+  const messages = useLiveQuery(() => db.messages.where('order_id').equals(id).toArray(), [id], [])
+  const lastRead = useLiveQuery(
+    async () => (await db.thread_reads.get(`${profile.id}:${id}`))?.last_read_at ?? null,
+    [profile.id, id],
+    null,
+  )
+
+  const unread = (messages ?? []).filter(
+    (m) => m.kind === 'user' && m.author_id !== profile.id && (!lastRead || m.created_at > lastRead),
+  ).length
+
+  /* Opening the tab is the read receipt. Depending on message count rather than
+     the array identity keeps this from firing on every Dexie re-emit. */
+  useEffect(() => {
+    if (tab === 'Thread') void markThreadRead(profile.id, id)
+  }, [tab, profile.id, id, messages?.length])
   const checkPhoto = useLiveQuery(
     async () => (order?.check_photo_id ? db.attachments.get(order.check_photo_id) : undefined),
     [order?.check_photo_id],
@@ -80,13 +102,18 @@ export function OrderDetail() {
             key={tb}
             onClick={() => setTab(tb)}
             className={cx(
-              'rounded-full px-3.5 py-1.5 text-xs font-bold transition',
+              'inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition',
               tab === tb
                 ? 'bg-gradient-to-b from-[#c2643f] to-[#a24e33] text-white shadow-[0_6px_16px_-8px_rgba(140,66,38,0.8)]'
                 : 'glass-quiet text-ink-600',
             )}
           >
             {tb}
+            {tb === 'Thread' && unread > 0 && tab !== 'Thread' && (
+              <span className="inline-flex min-w-4 justify-center rounded-full bg-brand px-1 py-0.5 text-[10px] font-black leading-none text-white">
+                {unread}
+              </span>
+            )}
           </button>
         ))}
       </div>

@@ -103,7 +103,7 @@ try {
 
   await step('supplier posts to the order thread', async () => {
     await page.getByRole('button', { name: 'Thread' }).click()
-    await page.getByPlaceholder(/Message the school/).fill('Delivery arriving before noon today.')
+    await page.getByPlaceholder('Write a message…').fill('Delivery arriving before noon today.')
     await page.getByRole('button', { name: 'Send' }).click()
     await page.waitForSelector('text=Delivery arriving before noon today.')
   })

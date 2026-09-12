@@ -19,6 +19,7 @@ import { AccountsPage } from './features/owner/AccountsPage'
 import { PaymentsPage } from './features/owner/PaymentsPage'
 import { BrandingPage } from './features/owner/BrandingPage'
 import { OrderDetail } from './features/shared/OrderDetail'
+import { MessagesPage } from './features/shared/MessagesPage'
 import { seedIfEmpty } from './lib/db/seed'
 import { startSyncLoop } from './lib/sync'
 
@@ -99,6 +100,7 @@ export default function App() {
         element={profile && isKnownRole(profile.role) ? <ChangePasswordPage /> : <Navigate to="/login" replace />}
       />
 
+      <Route path="/messages" element={<AnyPortal><MessagesPage /></AnyPortal>} />
       <Route path="/orders/:id" element={<AnyPortal><OrderDetail /></AnyPortal>} />
 
       <Route

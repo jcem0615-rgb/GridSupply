@@ -99,6 +99,11 @@ Warm, cozy palette on glassmorphic surfaces. `src/index.css` holds the whole thi
   school Principal would hand a vendor the account that approves their own POs, so it is
   refused in `canResetPasswordFor()`, in the Team page query, and in RLS (both `USING` and
   `WITH CHECK`). Reasoning in `docs/09`.
+- **The order thread is reachable from three places** — a header messages button with an
+  unread badge, a `/messages` list, and a badge on the order's Thread tab. The chat always
+  worked; it was unreachable unless you already knew to open an order and click the third
+  tab. Unread counts exclude system events, and read markers stay local (never enqueued).
+  See `docs/07`.
 - **Long lists are paginated client-side.** `usePaged` + `<Pager>` cover the PR wizard's
   item picker (10/page), the supplier catalog (12/page) and the order lists (15/page).
   Selections in the wizard are keyed by item id, so they survive paging and searching; a

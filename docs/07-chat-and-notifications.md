@@ -19,6 +19,29 @@ System messages are rendered as centred pills rather than bubbles. Because every
 in `orders.ts` calls `postSystemMessage`, the thread is a complete, chronological narrative
 of the order — which is what a dispute actually needs.
 
+## Reaching the thread
+A conversation nobody can find is a conversation nobody uses. The thread lives on the order
+(Summary / Documents / **Thread**), and three surfaces lead to it:
+
+- **A messages button in the header**, on every screen and every viewport, carrying a total
+  unread badge. It is in the header rather than the bottom nav because the supplier portal
+  already has five tabs and a sixth makes them unusable at 390px.
+- **`/messages`** — one row per order thread with the counterpart, the last message and an
+  unread count, filterable to unread only. Rows deep-link to `/orders/:id?tab=thread`.
+- **An unread badge on the Thread tab** of the order itself.
+
+**Unread** means a `user` message written by someone else since this profile last opened
+the thread. System events are excluded deliberately: the lifecycle already surfaces those
+as status changes, and counting them would leave a permanent badge on every order nobody
+has actually chatted about.
+
+Read markers live in the local `thread_reads` table and are **never enqueued to the
+outbox** — a read receipt is a per-user UI nicety, and one sync write per thread-open would
+swamp the queue that carries purchase orders.
+
+`npm run chat-check` covers these surfaces, including the mobile composer being on screen
+without scrolling.
+
 ## Attachments
 Chat images are stored as attachments and referenced by `attachment_id`. In a wired
 deployment they live in `chat-attachments/<order_id>/…`, gated by the same

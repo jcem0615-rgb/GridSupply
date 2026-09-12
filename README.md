@@ -80,13 +80,14 @@ docs/           01–09, read in order
 | `npm run smoke` | Drive all nine lifecycle steps across the three portals in a real browser |
 | `npm run pwa-check` | Verify service-worker control, offline boot and offline capture |
 | `npm run auth-check` | Verify the password reveal toggle and remember-me storage |
+| `npm run chat-check` | Verify the order thread is reachable and usable on mobile |
 
 Both browser checks need a **production** build served by `preview` — the service worker
 does not register in dev:
 
 ```bash
 npm run build && npm run preview &
-npm run smoke && npm run pwa-check && npm run auth-check
+npm run smoke && npm run pwa-check && npm run auth-check && npm run chat-check
 ```
 
 ## Deployment

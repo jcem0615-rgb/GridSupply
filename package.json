@@ -14,7 +14,8 @@
     "icons": "node scripts/generate-icons.mjs",
     "smoke": "node scripts/smoke.mjs",
     "pwa-check": "node scripts/pwa-check.mjs",
-    "auth-check": "node scripts/auth-check.mjs"
+    "auth-check": "node scripts/auth-check.mjs",
+    "chat-check": "node scripts/chat-check.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

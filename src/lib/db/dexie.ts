@@ -9,6 +9,7 @@ import type {
   OrderLine,
   OutboxEntry,
   PaymentMethod,
+  ThreadRead,
   PrintTemplate,
   Profile,
   School,
@@ -37,6 +38,7 @@ export class GridSupplyDB extends Dexie {
   tax_config!: Table<TaxConfig, string>
   branding!: Table<BrandingSettings, string>
   print_templates!: Table<PrintTemplate, string>
+  thread_reads!: Table<ThreadRead, string>
   outbox!: Table<OutboxEntry, number>
 
   constructor() {
@@ -110,6 +112,14 @@ export class GridSupplyDB extends Dexie {
           row.password_reset_at ??= null
         })
     })
+
+    /**
+     * v5 records which order threads a user has caught up on. Deliberately
+     * local-only and never enqueued to the outbox: a read marker is a per-user
+     * UI nicety, and syncing one write per thread-open would swamp the queue
+     * that carries purchase orders.
+     */
+    this.version(5).stores({ thread_reads: 'id, profile_id, order_id' })
   }
 }
 

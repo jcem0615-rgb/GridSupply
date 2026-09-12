@@ -67,7 +67,10 @@ export function OrderChat({ orderId }: { orderId: string }) {
   }
 
   return (
-    <div className="flex h-[26rem] flex-col">
+    /* Sized so the composer lands above the fold on a phone: opening Thread and
+       seeing no way to type reads as a broken feature. dvh rather than vh so
+       mobile browser chrome is accounted for. */
+    <div className="flex h-[clamp(14rem,calc(100dvh-27rem),32rem)] flex-col">
       <div className="scroll-thin flex-1 space-y-3 overflow-y-auto pr-1">
         {(messages ?? []).length === 0 && (
           <p className="py-10 text-center text-xs text-ink-400">
@@ -128,7 +131,8 @@ export function OrderChat({ orderId }: { orderId: string }) {
             }
           }}
           rows={1}
-          placeholder="Message the school and supplier…"
+          aria-label="Write a message" 
+          placeholder="Write a message…"
           className="max-h-28 min-h-[2.75rem] flex-1 resize-none rounded-xl border border-ink-200 px-3.5 py-2.5 text-sm outline-none focus:border-brand"
         />
         <Button onClick={() => void send()} disabled={sending || !draft.trim()}>

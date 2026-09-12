@@ -300,6 +300,14 @@ export interface PrintTemplate {
   updated_at: string
 }
 
+/** Per-user, per-order "caught up to here" marker. Local-only; see dexie.ts. */
+export interface ThreadRead {
+  id: string
+  profile_id: string
+  order_id: string
+  last_read_at: string
+}
+
 export type OutboxOp = 'insert' | 'update' | 'delete'
 
 export interface OutboxEntry {

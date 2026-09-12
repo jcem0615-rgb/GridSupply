@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { useAuth } from '../store/auth'
 import { ROLE_LABEL, ROLE_PORTAL, type Portal } from '../types'
 import { db } from '../lib/db/dexie'
+import { totalUnread } from '../lib/threads'
 import { cx } from './ui'
 import { OfflineBar } from './OfflineBar'
 import { InstallPrompt } from './InstallPrompt'
@@ -65,6 +66,8 @@ export function Layout({ children }: { children: ReactNode }) {
   const portal = profile ? ROLE_PORTAL[profile.role] : 'school'
   const items = NAV[portal]
 
+  const unread = useLiveQuery(async () => (profile ? totalUnread(profile) : 0), [profile?.id], 0)
+
   const tenant = useLiveQuery(async () => {
     if (!profile) return null
     if (profile.school_id) return (await db.schools.get(profile.school_id))?.name ?? null
@@ -111,6 +114,26 @@ export function Layout({ children }: { children: ReactNode }) {
               </NavLink>
             ))}
           </nav>
+          <NavLink
+            to="/messages"
+            aria-label={unread ? `Messages, ${unread} unread` : 'Messages'}
+            className={({ isActive }) =>
+              cx(
+                'relative rounded-xl p-2 transition',
+                isActive ? 'bg-[rgba(180,89,58,0.13)] text-brand' : 'text-ink-400 hover:bg-[rgba(255,251,245,0.7)] hover:text-ink-600',
+              )
+            }
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-3.8-.9L3 21l1.9-5a8.4 8.4 0 0 1-.9-3.8 8.4 8.4 0 0 1 8.4-9 8.4 8.4 0 0 1 8.6 8.3Z" />
+            </svg>
+            {!!unread && (
+              <span className="absolute -right-0.5 -top-0.5 flex min-w-[18px] justify-center rounded-full bg-brand px-1 py-0.5 text-[10px] font-black leading-none text-white ring-2 ring-[rgba(255,251,245,0.9)]">
+                {unread > 9 ? '9+' : unread}
+              </span>
+            )}
+          </NavLink>
+
           <button
             onClick={async () => {
               await signOut()
