@@ -90,6 +90,10 @@ Warm, cozy palette on glassmorphic surfaces. `src/index.css` holds the whole thi
   are an audit trail for public funds. The Owner Portal blocks the delete and points at
   `stopped`, which revokes access and is reversible. A tenant with no orders deletes, and
   its people cascade with it.
+- **"Keep me signed in" moves the session between storages.** Checked persists to
+  `localStorage`, unchecked to `sessionStorage` so a shared-workstation session ends with
+  the browser. An absent preference counts as remembered, so upgrading installs are not
+  signed out. Details and the reveal-toggle notes in `docs/09`.
 - **Password resets follow the tenant boundary.** The Owner resets anyone; a Supplier
   Owner resets only accounts carrying their own `supplier_id`. A supplier resetting a
   school Principal would hand a vendor the account that approves their own POs, so it is

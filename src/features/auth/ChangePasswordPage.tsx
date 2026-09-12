@@ -4,7 +4,8 @@ import { useAuth } from '../../store/auth'
 import { setOwnPassword } from '../../lib/accounts'
 import { passwordProblem } from '../../lib/auth/password'
 import { ROLE_PORTAL } from '../../types'
-import { Button, Card, Field, Input } from '../../components/ui'
+import { Button, Card, Field } from '../../components/ui'
+import { PasswordInput } from '../../components/PasswordInput'
 
 /** Reached when an admin reset flagged the account, or from a deliberate change. */
 export function ChangePasswordPage() {
@@ -50,8 +51,7 @@ export function ChangePasswordPage() {
         <Card>
           <form onSubmit={submit} className="space-y-4">
             <Field label="New password" hint="At least 8 characters, with a letter and a number.">
-              <Input
-                type="password"
+              <PasswordInput
                 autoComplete="new-password"
                 value={next}
                 onChange={(e) => setNext(e.target.value)}
@@ -59,8 +59,7 @@ export function ChangePasswordPage() {
               />
             </Field>
             <Field label="Confirm new password">
-              <Input
-                type="password"
+              <PasswordInput
                 autoComplete="new-password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}

@@ -54,6 +54,24 @@ With `VITE_SUPABASE_URL` set, Supabase Auth owns credentials:
   `auth.admin.updateUserById()`. This is listed as an open item in `CLAUDE.md`; the
   `must_change_password` flag and the audit columns are already in the schema for it.
 
+## Sign-in surface
+- **Reveal toggle** (`src/components/PasswordInput.tsx`) swaps only the input's `type`, so
+  the value and caret are untouched. It is `type="button"` — a reveal control that submits
+  the form on Enter is a classic bug — and carries `aria-pressed` plus a label that flips
+  between "Show password" and "Hide password".
+- **Keep me signed in** decides *where* the session is stored, not merely whether a box is
+  ticked: checked writes to `localStorage`, unchecked to `sessionStorage`, so on a shared
+  school workstation the session genuinely ends when the browser closes. Each write clears
+  the copy in the other store, or a stale persistent session could outlive a later
+  "do not remember" sign-in.
+- **A missing preference means remembered.** Installs predating this setting already hold a
+  session in `localStorage`; treating the absent flag as "do not remember" would sign all
+  of them out on upgrade. The backing store is also resolved per call rather than through
+  `createJSONStorage`, which resolves its getter once and would freeze the choice made at
+  module load.
+
+`npm run auth-check` covers both, including a simulated browser restart.
+
 ## Password rules
 At least 8 characters, containing a letter and a number — `passwordProblem()` in
 `src/lib/auth/password.ts`. Deliberately modest: this is a shared-workstation government

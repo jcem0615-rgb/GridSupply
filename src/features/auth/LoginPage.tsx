@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../lib/db/dexie'
-import { useAuth } from '../../store/auth'
+import { isRemembered, setRemembered, useAuth } from '../../store/auth'
 import { ROLE_LABEL, ROLE_PORTAL, type Profile } from '../../types'
 import { Button, Card, Field, Input, cx } from '../../components/ui'
+import { PasswordInput } from '../../components/PasswordInput'
 import { isSupabaseConfigured } from '../../lib/supabase'
 
 const PORTAL_TONE = {
@@ -21,10 +22,12 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [remember, setRemember] = useState(isRemembered)
 
   const profiles = useLiveQuery(() => db.profiles.toArray(), [], [] as Profile[])
 
   const go = async (p: Profile) => {
+    setRemembered(remember)
     await signInAs(p.id)
     navigate(`/${ROLE_PORTAL[p.role]}`)
   }
@@ -33,6 +36,7 @@ export function LoginPage() {
     e.preventDefault()
     setBusy(true)
     setError(null)
+    setRemembered(remember)
     const err = await signInWithPassword(email.trim(), password)
     setBusy(false)
     if (err) return setError(err)
@@ -72,14 +76,29 @@ export function LoginPage() {
                 />
               </Field>
               <Field label="Password">
-                <Input
-                  type="password"
+                <PasswordInput
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                 />
               </Field>
+
+              <label className="flex cursor-pointer items-start gap-2.5 text-sm text-ink-700">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-[#b4593a]"
+                />
+                <span>
+                  Keep me signed in
+                  <span className="block text-[11px] text-ink-400">
+                    Leave this off on a shared computer — the session then ends when the browser closes.
+                  </span>
+                </span>
+              </label>
+
               {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
               <Button type="submit" full disabled={busy}>
                 {busy ? 'Signing in…' : 'Sign in'}
