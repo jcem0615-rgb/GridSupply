@@ -158,8 +158,14 @@ export interface Order {
   iar_number: string | null
   purpose: string
   fund_source: string
-  /** Sum of line totals — VAT-inclusive gross. */
+  /** Sum of line totals. VAT-inclusive when the supplier is VAT-registered. */
   gross_total: number
+  /**
+   * The supplier's VAT registration as the school recorded it for THIS order.
+   * Snapshotted rather than read live from `suppliers`, so a later change to a
+   * supplier's registration cannot silently restate the tax on a paid voucher.
+   */
+  supplier_vat_registered: boolean
   requested_by: string | null
   approved_by: string | null
   approved_at: string | null
@@ -271,8 +277,11 @@ export interface TaxConfig {
   vat_rate: number
   ewt_rate: number
   final_vat_withheld_rate: number
+  /** Withheld from non-VAT suppliers in place of the final VAT withholding. */
+  percentage_tax_rate: number
   ewt_atc: string
   vat_atc: string
+  percentage_tax_atc: string
   effective_from: string
 }
 

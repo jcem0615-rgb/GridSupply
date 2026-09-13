@@ -11,38 +11,54 @@ export function sellingPrice(baseCost: number, markupPct: number) {
 }
 
 export interface TaxBreakdown {
-  /** VAT-inclusive amount billed by the supplier. */
+  /** Whether this was computed as a VAT-registered supply. */
+  vatRegistered: boolean
+  /** Amount billed by the supplier — VAT-inclusive when the supplier is VAT-registered. */
   gross: number
-  /** Gross net of VAT — the tax base every withholding is computed on. */
+  /** The tax base every withholding is computed on. */
   netOfVat: number
   vat: number
   /** Expanded withholding tax on goods (BIR ATC WC158, 1%). */
   ewt: number
-  /** Final VAT withheld on government purchases (ATC WV010, 5%). */
+  /** Final VAT withheld on government purchases (ATC WV010, 5%). VAT-registered only. */
   vatWithheld: number
+  /** Percentage tax withheld from a non-VAT supplier (ATC WB080). Zero otherwise. */
+  percentageTax: number
   totalWithheld: number
   /** What the cheque is actually cut for. */
   netPayable: number
 }
 
 /**
- * Government purchase from a VAT-registered supplier.
- * Withholdings are computed on the amount NET of VAT, never on the gross —
- * see docs/05-tax-and-financial-calculations.md.
+ * Government purchase, branching on the supplier's VAT registration.
+ *
+ * **VAT-registered.** The billed amount is VAT-inclusive, so VAT is stripped
+ * out first and both withholdings are computed on the amount NET of VAT, never
+ * on the gross — computing on the gross over-withholds by 12% and is the most
+ * common manual error this app removes.
+ *
+ * **Non-VAT.** There is no VAT embedded, so the billed amount *is* the tax
+ * base. The 5% final VAT withholding does not apply — it exists to capture VAT
+ * a non-VAT supplier never charged. Percentage tax is withheld in its place.
+ *
+ * Every rate comes from `tax_config`; see docs/05.
  */
-export function computeTax(gross: number, cfg: TaxConfig): TaxBreakdown {
+export function computeTax(gross: number, cfg: TaxConfig, vatRegistered: boolean): TaxBreakdown {
   const g = round2(gross)
-  const netOfVat = round2(g / (1 + cfg.vat_rate))
-  const vat = round2(g - netOfVat)
+  const netOfVat = vatRegistered ? round2(g / (1 + cfg.vat_rate)) : g
+  const vat = vatRegistered ? round2(g - netOfVat) : 0
   const ewt = round2(netOfVat * cfg.ewt_rate)
-  const vatWithheld = round2(netOfVat * cfg.final_vat_withheld_rate)
-  const totalWithheld = round2(ewt + vatWithheld)
+  const vatWithheld = vatRegistered ? round2(netOfVat * cfg.final_vat_withheld_rate) : 0
+  const percentageTax = vatRegistered ? 0 : round2(netOfVat * cfg.percentage_tax_rate)
+  const totalWithheld = round2(ewt + vatWithheld + percentageTax)
   return {
+    vatRegistered,
     gross: g,
     netOfVat,
     vat,
     ewt,
     vatWithheld,
+    percentageTax,
     totalWithheld,
     netPayable: round2(g - totalWithheld),
   }

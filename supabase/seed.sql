@@ -32,8 +32,9 @@ insert into payment_methods (label, kind, account_name, account_number, bank_nam
    'Use your supplier name as the transfer remark so we can match the payment.', 2)
 on conflict do nothing;
 
-insert into tax_config (vat_rate, ewt_rate, final_vat_withheld_rate, ewt_atc, vat_atc, effective_from)
-values (0.12, 0.01, 0.05, 'WC158', 'WV010', '2024-01-01')
+insert into tax_config (vat_rate, ewt_rate, final_vat_withheld_rate, percentage_tax_rate,
+                        ewt_atc, vat_atc, percentage_tax_atc, effective_from)
+values (0.12, 0.01, 0.05, 0.03, 'WC158', 'WV010', 'WB080', '2024-01-01')
 on conflict do nothing;
 
 insert into catalog_items (supplier_id, name, description, unit, base_cost, markup_pct, selling_price) values

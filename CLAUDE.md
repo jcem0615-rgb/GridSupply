@@ -78,6 +78,14 @@ Warm, cozy palette on glassmorphic surfaces. `src/index.css` holds the whole thi
   server-generated archival copies.
 - **EWT/VAT rates** — moved out of code into the `tax_config` table. A BIR change is an
   `UPDATE`, not a deploy.
+- **The school records the supplier's VAT status per order.** `orders.supplier_vat_registered`
+  defaults from the supplier's record but the school sets it in the PR wizard and can
+  correct it until the DV is issued, after which it locks — withholdings on an issued
+  voucher must not move. It is a snapshot, not a live lookup, so a supplier registering
+  for VAT later cannot restate the tax on vouchers already printed. The school decides
+  because the school is the withholding agent. Non-VAT drops the 12% VAT and the 5% final
+  VAT withholding and applies percentage tax (`percentage_tax_rate`, ATC WB080) instead;
+  **that rate ships at 3% and should be confirmed with an accountant.** See `docs/05`.
 - **Camera on iOS PWA** — `PhotoCapture` always offers a file-picker beside the camera
   button, because `capture` is unreliable in standalone iOS mode.
 - **Payment proof storage** — private buckets keyed by tenant-id path prefix, enforced in

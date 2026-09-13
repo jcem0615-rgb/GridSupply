@@ -163,8 +163,10 @@ const taxConfig: TaxConfig = {
   vat_rate: 0.12,
   ewt_rate: 0.01,
   final_vat_withheld_rate: 0.05,
+  percentage_tax_rate: 0.03,
   ewt_atc: 'WC158',
   vat_atc: 'WV010',
+  percentage_tax_atc: 'WB080',
   effective_from: '2024-01-01',
 }
 

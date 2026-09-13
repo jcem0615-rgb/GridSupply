@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../lib/db/dexie'
+import { getTaxConfig } from '../../lib/db/seed'
 import { useAuth } from '../../store/auth'
 import { peso, round2 } from '../../lib/money'
 import { createPR, type DraftLine } from '../../lib/orders'
@@ -22,12 +23,15 @@ export function PRWizard() {
   const [purpose, setPurpose] = useState('')
   const [fundSource, setFundSource] = useState(FUND_SOURCES[0])
   const [supplierId, setSupplierId] = useState('')
+  /* null = follow the supplier's own record; true/false = the school overrode it. */
+  const [vatOverride, setVatOverride] = useState<boolean | null>(null)
   const [qty, setQty] = useState<Record<string, number>>({})
   const [search, setSearch] = useState('')
   const [selectedOnly, setSelectedOnly] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const suppliers = useLiveQuery(() => db.suppliers.filter((s) => s.status === 'active').toArray(), [], [])
+  const tax = useLiveQuery(() => getTaxConfig(), [])
   const catalog = useLiveQuery(
     async (): Promise<CatalogItem[]> =>
       supplierId ? db.catalog_items.where('supplier_id').equals(supplierId).toArray() : [],
@@ -70,6 +74,9 @@ export function PRWizard() {
 
   const total = round2(lines.reduce((s, l) => s + l.qty * l.unit_price, 0))
 
+  const supplier = (suppliers ?? []).find((s) => s.id === supplierId)
+  const vatRegistered = vatOverride ?? supplier?.vat_registered ?? true
+
   if (!can(profile.role, 'pr.create')) {
     return <Empty title="Not your step" hint="Only the Property Custodian or BAC can draft a Purchase Request." />
   }
@@ -78,7 +85,13 @@ export function PRWizard() {
 
   const save = async () => {
     setSaving(true)
-    const order = await createPR(profile, { supplier_id: supplierId, purpose, fund_source: fundSource, lines })
+    const order = await createPR(profile, {
+      supplier_id: supplierId,
+      purpose,
+      fund_source: fundSource,
+      lines,
+      supplier_vat_registered: vatRegistered,
+    })
     setSaving(false)
     navigate(`/orders/${order.id}`)
   }
@@ -125,7 +138,14 @@ export function PRWizard() {
               </Select>
             </Field>
             <Field label="Supplier">
-              <Select value={supplierId} onChange={(e) => setSupplierId(e.target.value)}>
+              <Select
+                value={supplierId}
+                onChange={(e) => {
+                  setSupplierId(e.target.value)
+                  /* A new supplier brings its own status; drop any prior override. */
+                  setVatOverride(null)
+                }}
+              >
                 <option value="">Select a supplier…</option>
                 {(suppliers ?? []).map((s) => (
                   <option key={s.id} value={s.id}>
@@ -134,6 +154,39 @@ export function PRWizard() {
                 ))}
               </Select>
             </Field>
+
+            {supplier && (
+              <div>
+                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-400">
+                  Supplier's VAT status
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    [true, 'VAT-registered', '12% VAT, 1% EWT, 5% final VAT'],
+                    [false, 'Non-VAT', `1% EWT, ${((tax?.percentage_tax_rate ?? 0) * 100).toFixed(0)}% percentage tax`],
+                  ].map(([value, label, hint]) => (
+                    <button
+                      key={String(value)}
+                      onClick={() => setVatOverride(value as boolean)}
+                      className={cx(
+                        'rounded-xl border px-3 py-2.5 text-left transition',
+                        vatRegistered === value
+                          ? 'border-brand/50 bg-[rgba(180,89,58,0.12)]'
+                          : 'border-[rgba(120,80,50,0.18)] hover:bg-[rgba(255,251,245,0.7)]',
+                      )}
+                    >
+                      <span className="block text-sm font-bold text-ink-900">{label as string}</span>
+                      <span className="block text-[11px] text-ink-400">{hint as string}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-[11px] text-ink-400">
+                  {vatOverride === null
+                    ? `From ${supplier.name}'s registration on file. Change it if their BIR certificate says otherwise.`
+                    : 'Overridden for this purchase — check against the supplier\'s BIR Certificate of Registration.'}
+                </p>
+              </div>
+            )}
           </div>
         </Card>
       )}

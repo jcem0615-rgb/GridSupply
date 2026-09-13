@@ -45,6 +45,7 @@ function specimen(schoolId: string): { order: Order; lines: OrderLine[] } {
     purpose: 'Supplies for the 2nd quarter examinations',
     fund_source: 'MOOE',
     gross_total: 12_460,
+    supplier_vat_registered: true,
     requested_by: null,
     approved_by: null,
     approved_at: nowIso(),

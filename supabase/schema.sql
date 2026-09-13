@@ -143,6 +143,9 @@ create table orders (
   purpose text not null default '',
   fund_source text not null default 'MOOE',
   gross_total numeric(14,2) not null default 0,
+  -- Snapshotted per order: a later change to a supplier's registration must not
+  -- restate the tax on a voucher already issued.
+  supplier_vat_registered boolean not null default true,
   requested_by uuid references profiles (id) on delete set null,
   approved_by uuid references profiles (id) on delete set null,
   approved_at timestamptz,
@@ -257,8 +260,11 @@ create table tax_config (
   vat_rate numeric(5,4) not null default 0.12,
   ewt_rate numeric(5,4) not null default 0.01,
   final_vat_withheld_rate numeric(5,4) not null default 0.05,
+  -- Withheld from non-VAT suppliers in place of the final VAT withholding.
+  percentage_tax_rate numeric(5,4) not null default 0.03,
   ewt_atc text not null default 'WC158',
   vat_atc text not null default 'WV010',
+  percentage_tax_atc text not null default 'WB080',
   effective_from date not null default current_date
 );
 

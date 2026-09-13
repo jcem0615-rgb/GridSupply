@@ -128,7 +128,7 @@ function LineTable({ lines, showPrices = true }: { lines: OrderLine[]; showPrice
 
 export function PrintDoc(props: DocProps) {
   const { type, order, lines, school, supplier, tax, template, logo, checkPhoto } = props
-  const t = computeTax(order.gross_total, tax)
+  const t = computeTax(order.gross_total, tax, order.supplier_vat_registered)
 
   return (
     <article className="print-sheet mx-auto w-full max-w-[210mm] bg-white p-8 text-neutral-900 shadow-sm">
@@ -261,31 +261,51 @@ export function PrintDoc(props: DocProps) {
           <table className="w-full border-collapse text-[11px]">
             <tbody>
               <tr>
-                <td className="border border-neutral-400 px-2 py-1">Gross amount (VAT inclusive)</td>
+                <td className="border border-neutral-400 px-2 py-1">
+                  {t.vatRegistered ? 'Gross amount (VAT inclusive)' : 'Gross amount (non-VAT supplier)'}
+                </td>
                 <td className="w-40 border border-neutral-400 px-2 py-1 text-right tabular-nums">{peso(t.gross)}</td>
               </tr>
-              <tr>
-                <td className="border border-neutral-400 px-2 py-1 pl-6 text-neutral-600">Amount net of VAT (tax base)</td>
-                <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums text-neutral-600">{peso(t.netOfVat)}</td>
-              </tr>
-              <tr>
-                <td className="border border-neutral-400 px-2 py-1 pl-6 text-neutral-600">
-                  VAT ({(tax.vat_rate * 100).toFixed(0)}%)
-                </td>
-                <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums text-neutral-600">{peso(t.vat)}</td>
-              </tr>
+              {t.vatRegistered && (
+                <>
+                  <tr>
+                    <td className="border border-neutral-400 px-2 py-1 pl-6 text-neutral-600">Amount net of VAT (tax base)</td>
+                    <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums text-neutral-600">{peso(t.netOfVat)}</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-neutral-400 px-2 py-1 pl-6 text-neutral-600">
+                      VAT ({(tax.vat_rate * 100).toFixed(0)}%)
+                    </td>
+                    <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums text-neutral-600">{peso(t.vat)}</td>
+                  </tr>
+                </>
+              )}
               <tr>
                 <td className="border border-neutral-400 px-2 py-1">
                   Less: Expanded withholding tax ({(tax.ewt_rate * 100).toFixed(0)}% · {tax.ewt_atc})
                 </td>
                 <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">({peso(t.ewt)})</td>
               </tr>
-              <tr>
-                <td className="border border-neutral-400 px-2 py-1">
-                  Less: Final VAT withheld ({(tax.final_vat_withheld_rate * 100).toFixed(0)}% · {tax.vat_atc})
-                </td>
-                <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">({peso(t.vatWithheld)})</td>
-              </tr>
+              {t.vatRegistered ? (
+                <tr>
+                  <td className="border border-neutral-400 px-2 py-1">
+                    Less: Final VAT withheld ({(tax.final_vat_withheld_rate * 100).toFixed(0)}% · {tax.vat_atc})
+                  </td>
+                  <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">({peso(t.vatWithheld)})</td>
+                </tr>
+              ) : (
+                t.percentageTax > 0 && (
+                  <tr>
+                    <td className="border border-neutral-400 px-2 py-1">
+                      Less: Percentage tax withheld ({(tax.percentage_tax_rate * 100).toFixed(0)}% ·{' '}
+                      {tax.percentage_tax_atc})
+                    </td>
+                    <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">
+                      ({peso(t.percentageTax)})
+                    </td>
+                  </tr>
+                )
+              )}
               <tr className="bg-neutral-100 font-black">
                 <td className="border border-neutral-400 px-2 py-1.5">NET AMOUNT DUE</td>
                 <td className="border border-neutral-400 px-2 py-1.5 text-right tabular-nums">{peso(t.netPayable)}</td>
@@ -352,14 +372,29 @@ export function PrintDoc(props: DocProps) {
                 <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">{peso(t.netOfVat)}</td>
                 <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">{peso(t.ewt)}</td>
               </tr>
-              <tr>
-                <td className="border border-neutral-400 px-2 py-1">
-                  Final VAT withheld on government purchases ({(tax.final_vat_withheld_rate * 100).toFixed(0)}%)
-                </td>
-                <td className="border border-neutral-400 px-2 py-1 text-center">{tax.vat_atc}</td>
-                <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">{peso(t.netOfVat)}</td>
-                <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">{peso(t.vatWithheld)}</td>
-              </tr>
+              {t.vatRegistered ? (
+                <tr>
+                  <td className="border border-neutral-400 px-2 py-1">
+                    Final VAT withheld on government purchases ({(tax.final_vat_withheld_rate * 100).toFixed(0)}%)
+                  </td>
+                  <td className="border border-neutral-400 px-2 py-1 text-center">{tax.vat_atc}</td>
+                  <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">{peso(t.netOfVat)}</td>
+                  <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">{peso(t.vatWithheld)}</td>
+                </tr>
+              ) : (
+                t.percentageTax > 0 && (
+                  <tr>
+                    <td className="border border-neutral-400 px-2 py-1">
+                      Percentage tax on government money payments ({(tax.percentage_tax_rate * 100).toFixed(0)}%)
+                    </td>
+                    <td className="border border-neutral-400 px-2 py-1 text-center">{tax.percentage_tax_atc}</td>
+                    <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">{peso(t.netOfVat)}</td>
+                    <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">
+                      {peso(t.percentageTax)}
+                    </td>
+                  </tr>
+                )
+              )}
               <tr className="bg-neutral-100 font-black">
                 <td className="border border-neutral-400 px-2 py-1.5" colSpan={3}>
                   TOTAL TAX WITHHELD

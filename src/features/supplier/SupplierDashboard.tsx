@@ -21,12 +21,12 @@ export function SupplierDashboard() {
   const toAccept = list.filter((o) => o.status === 'po_issued')
   const inFlight = list.filter((o) => ['po_accepted', 'dispatched', 'delivered', 'dv_issued'].includes(o.status))
   const receivable = tax
-    ? inFlight.reduce((s, o) => s + computeTax(o.gross_total, tax).netPayable, 0)
+    ? inFlight.reduce((s, o) => s + computeTax(o.gross_total, tax, o.supplier_vat_registered).netPayable, 0)
     : 0
   const paidYtd = tax
     ? list
         .filter((o) => o.paid_at && new Date(o.paid_at).getFullYear() === new Date().getFullYear())
-        .reduce((s, o) => s + computeTax(o.gross_total, tax).netPayable, 0)
+        .reduce((s, o) => s + computeTax(o.gross_total, tax, o.supplier_vat_registered).netPayable, 0)
     : 0
 
   return (

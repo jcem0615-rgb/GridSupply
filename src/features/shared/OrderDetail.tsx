@@ -13,6 +13,8 @@ import { OrderActions } from './OrderActions'
 import { OrderChat } from './OrderChat'
 import { ChequeCard } from './ChequeCard'
 import { PrintDoc, DOC_TITLE, type DocType } from '../print/PrintDocs'
+import { can } from '../../lib/permissions'
+import { setSupplierVatStatus } from '../../lib/orders'
 import { ORDER_FLOW, ROLE_PORTAL, type OrderStatus } from '../../types'
 
 const TABS = ['Summary', 'Documents', 'Thread'] as const
@@ -79,7 +81,11 @@ export function OrderDetail() {
     return <Empty title="Loading…" hint="If this persists, the request may not exist on this device." />
   }
 
-  const t = computeTax(order.gross_total, tax)
+  const t = computeTax(order.gross_total, tax, order.supplier_vat_registered)
+  /* Changing this restates every withholding, so it closes when the DV is cut. */
+  const vatEditable =
+    can(profile.role, 'dv.issue') &&
+    !['dv_issued', 'paid', 'archived'].includes(order.status)
   const backTo = `/${ROLE_PORTAL[profile.role]}/orders`
   const docs = availableDocs(order.status)
   const step = Math.max(0, ORDER_FLOW.indexOf(order.status))
@@ -194,37 +200,82 @@ export function OrderDetail() {
           </div>
 
           <div className="space-y-5">
-            <Card title="Financial summary" subtitle="Government purchase, VAT-registered supplier">
+            <Card
+              title="Financial summary"
+              subtitle={`Government purchase · ${t.vatRegistered ? 'VAT-registered supplier' : 'non-VAT supplier'}`}
+            >
+              {vatEditable && (
+                <div className="mb-4 flex gap-2">
+                  {[
+                    [true, 'VAT-registered'],
+                    [false, 'Non-VAT'],
+                  ].map(([value, label]) => (
+                    <button
+                      key={String(value)}
+                      onClick={() => void setSupplierVatStatus(order.id, profile, value as boolean)}
+                      className={cx(
+                        'flex-1 rounded-xl border px-3 py-2 text-xs font-bold transition',
+                        t.vatRegistered === value
+                          ? 'border-brand/50 bg-[rgba(180,89,58,0.12)] text-brand'
+                          : 'border-[rgba(120,80,50,0.18)] text-ink-600 hover:bg-[rgba(255,251,245,0.7)]',
+                      )}
+                    >
+                      {label as string}
+                    </button>
+                  ))}
+                </div>
+              )}
               <dl className="space-y-1.5 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-ink-400">Gross (VAT incl.)</dt>
+                  <dt className="text-ink-400">{t.vatRegistered ? 'Gross (VAT incl.)' : 'Gross'}</dt>
                   <dd className="font-semibold tabular-nums">{peso(t.gross)}</dd>
                 </div>
-                <div className="flex justify-between text-xs">
-                  <dt className="text-ink-400">Net of VAT</dt>
-                  <dd className="tabular-nums text-ink-400">{peso(t.netOfVat)}</dd>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <dt className="text-ink-400">VAT ({(tax.vat_rate * 100).toFixed(0)}%)</dt>
-                  <dd className="tabular-nums text-ink-400">{peso(t.vat)}</dd>
-                </div>
+                {t.vatRegistered && (
+                  <>
+                    <div className="flex justify-between text-xs">
+                      <dt className="text-ink-400">Net of VAT</dt>
+                      <dd className="tabular-nums text-ink-400">{peso(t.netOfVat)}</dd>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <dt className="text-ink-400">VAT ({(tax.vat_rate * 100).toFixed(0)}%)</dt>
+                      <dd className="tabular-nums text-ink-400">{peso(t.vat)}</dd>
+                    </div>
+                  </>
+                )}
                 <div className="mt-2 flex justify-between border-t border-ink-100 pt-2">
                   <dt className="text-ink-400">
                     EWT {(tax.ewt_rate * 100).toFixed(0)}% ({tax.ewt_atc})
                   </dt>
                   <dd className="tabular-nums text-red-600">−{peso(t.ewt)}</dd>
                 </div>
-                <div className="flex justify-between">
-                  <dt className="text-ink-400">
-                    Final VAT {(tax.final_vat_withheld_rate * 100).toFixed(0)}% ({tax.vat_atc})
-                  </dt>
-                  <dd className="tabular-nums text-red-600">−{peso(t.vatWithheld)}</dd>
-                </div>
+                {t.vatRegistered ? (
+                  <div className="flex justify-between">
+                    <dt className="text-ink-400">
+                      Final VAT {(tax.final_vat_withheld_rate * 100).toFixed(0)}% ({tax.vat_atc})
+                    </dt>
+                    <dd className="tabular-nums text-red-600">−{peso(t.vatWithheld)}</dd>
+                  </div>
+                ) : (
+                  t.percentageTax > 0 && (
+                    <div className="flex justify-between">
+                      <dt className="text-ink-400">
+                        Percentage tax {(tax.percentage_tax_rate * 100).toFixed(0)}% ({tax.percentage_tax_atc})
+                      </dt>
+                      <dd className="tabular-nums text-red-600">−{peso(t.percentageTax)}</dd>
+                    </div>
+                  )
+                )}
                 <div className="mt-2 flex justify-between border-t-2 border-ink-900 pt-2">
                   <dt className="font-bold text-ink-900">Net payable</dt>
                   <dd className="text-base font-black tabular-nums text-ink-900">{peso(t.netPayable)}</dd>
                 </div>
               </dl>
+              {!vatEditable && can(profile.role, 'dv.issue') && (
+                <p className="mt-3 text-[11px] text-ink-400">
+                  VAT status is locked once the Disbursement Voucher exists — the withholdings on an issued voucher
+                  must not move.
+                </p>
+              )}
             </Card>
 
             <Card title="Parties">

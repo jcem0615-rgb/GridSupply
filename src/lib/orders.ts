@@ -98,7 +98,13 @@ export interface DraftLine {
 
 export async function createPR(
   actor: Profile,
-  input: { supplier_id: string | null; purpose: string; fund_source: string; lines: DraftLine[] },
+  input: {
+    supplier_id: string | null
+    purpose: string
+    fund_source: string
+    lines: DraftLine[]
+    supplier_vat_registered: boolean
+  },
 ) {
   const id = uuid()
   const seq = await nextSeq('PR')
@@ -126,6 +132,7 @@ export async function createPR(
     purpose: input.purpose,
     fund_source: input.fund_source,
     gross_total: round2(lines.reduce((s, l) => s + l.line_total, 0)),
+    supplier_vat_registered: input.supplier_vat_registered,
     requested_by: actor.id,
     approved_by: null,
     approved_at: null,
@@ -266,6 +273,20 @@ export const recordCheck = (id: string, a: Profile, checkNumber: string, photoId
     { check_number: checkNumber, check_photo_id: photoId, paid_at: nowIso() },
     'paid',
     `Cheque ${checkNumber} released to supplier.`,
+  )
+
+/**
+ * The school records the supplier's VAT registration for this order. Changing
+ * it restates every withholding, so it is locked once the DV exists — a voucher
+ * already cut must not have its numbers move underneath it.
+ */
+export const setSupplierVatStatus = (id: string, a: Profile, vatRegistered: boolean) =>
+  patchOrder(
+    id,
+    a,
+    { supplier_vat_registered: vatRegistered },
+    null,
+    `Supplier recorded as ${vatRegistered ? 'VAT-registered' : 'non-VAT'} for this purchase.`,
   )
 
 /** Lets the school attach or replace the cheque image after payment was recorded —

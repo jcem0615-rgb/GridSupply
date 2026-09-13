@@ -38,6 +38,8 @@ export function CatalogPage() {
     [],
   )
   const tax = useLiveQuery(() => getTaxConfig(), [])
+  /* The take-home preview depends on this supplier's own VAT registration. */
+  const supplier = useLiveQuery(() => db.suppliers.get(profile.supplier_id!), [profile.supplier_id])
 
   const canPrice = can(profile.role, 'catalog.pricing')
   const term = q.trim().toLowerCase()
@@ -56,7 +58,10 @@ export function CatalogPage() {
     setEditing(null)
   }
 
-  const preview = editing && tax ? computeTax(sellingPrice(editing.base_cost, editing.markup_pct), tax) : null
+  const preview =
+    editing && tax
+      ? computeTax(sellingPrice(editing.base_cost, editing.markup_pct), tax, supplier?.vat_registered ?? true)
+      : null
 
   return (
     <div className="space-y-5">
@@ -161,15 +166,27 @@ export function CatalogPage() {
               </div>
               {preview && tax && (
                 <dl className="mt-3 space-y-1 border-t border-ink-200 pt-3 text-[11px]">
-                  <p className="mb-1 font-bold uppercase text-ink-400">If a school buys 1 {editing.unit}</p>
+                  <p className="mb-1 font-bold uppercase text-ink-400">
+                    If a school buys 1 {editing.unit} · {supplier?.vat_registered ? 'VAT-registered' : 'non-VAT'}
+                  </p>
                   <div className="flex justify-between">
                     <dt className="text-ink-400">Less EWT {(tax.ewt_rate * 100).toFixed(0)}%</dt>
                     <dd className="tabular-nums text-red-600">−{peso(preview.ewt)}</dd>
                   </div>
-                  <div className="flex justify-between">
-                    <dt className="text-ink-400">Less final VAT {(tax.final_vat_withheld_rate * 100).toFixed(0)}%</dt>
-                    <dd className="tabular-nums text-red-600">−{peso(preview.vatWithheld)}</dd>
-                  </div>
+                  {preview.vatWithheld > 0 && (
+                    <div className="flex justify-between">
+                      <dt className="text-ink-400">Less final VAT {(tax.final_vat_withheld_rate * 100).toFixed(0)}%</dt>
+                      <dd className="tabular-nums text-red-600">−{peso(preview.vatWithheld)}</dd>
+                    </div>
+                  )}
+                  {preview.percentageTax > 0 && (
+                    <div className="flex justify-between">
+                      <dt className="text-ink-400">
+                        Less percentage tax {(tax.percentage_tax_rate * 100).toFixed(0)}%
+                      </dt>
+                      <dd className="tabular-nums text-red-600">−{peso(preview.percentageTax)}</dd>
+                    </div>
+                  )}
                   <div className="flex justify-between border-t border-ink-200 pt-1 font-bold">
                     <dt>You receive</dt>
                     <dd className="tabular-nums">{peso(preview.netPayable)}</dd>

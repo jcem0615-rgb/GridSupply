@@ -129,6 +129,29 @@ export class GridSupplyDB extends Dexie {
      * like everything else.
      */
     this.version(6).stores({ supplier_clients: 'id, supplier_id, school_id' })
+
+    /**
+     * v7 records the supplier's VAT status per order. Existing orders were all
+     * computed as VAT-registered, which was the only branch that existed, so
+     * backfilling from the supplier's current flag would silently restate the
+     * tax on vouchers already issued. Backfill true to preserve what was
+     * printed, and let the school correct anything still pre-DV by hand.
+     */
+    this.version(7).upgrade(async (tx) => {
+      await tx
+        .table('orders')
+        .toCollection()
+        .modify((row: Record<string, unknown>) => {
+          row.supplier_vat_registered ??= true
+        })
+      await tx
+        .table('tax_config')
+        .toCollection()
+        .modify((row: Record<string, unknown>) => {
+          row.percentage_tax_rate ??= 0.03
+          row.percentage_tax_atc ??= 'WB080'
+        })
+    })
   }
 }
 

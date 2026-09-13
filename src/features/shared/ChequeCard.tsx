@@ -32,7 +32,7 @@ export function ChequeCard({ order, tax }: { order: Order; tax: TaxConfig }) {
   if (!order.paid_at && !order.check_number) return null
 
   const canCapture = can(profile.role, 'check.capture')
-  const net = computeTax(order.gross_total, tax).netPayable
+  const net = computeTax(order.gross_total, tax, order.supplier_vat_registered).netPayable
   const baseName = `cheque-${order.check_number || 'unnumbered'}-${order.po_number ?? order.pr_number}`
 
   const upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
