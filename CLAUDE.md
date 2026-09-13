@@ -12,9 +12,9 @@ capture in the field.
 ## Three portals, one codebase
 1. **Owner Portal** — platform super-admin: full CRUD on schools, suppliers and people;
    branding asset uploads; published payment methods; subscription payment approval queue.
-2. **School Portal** — a single Principal account per school: PR/PO/DV creation, print
-   template customisation, cheque photo capture. The Custodian, BAC and Disbursing Officer
-   are document signatories, not users.
+2. **School Portal** — a Principal plus at most one School Admin, who performs the same
+   workflow steps: PR/PO/DV creation, print template customisation, cheque photo capture.
+   The Custodian, BAC and Disbursing Officer are document signatories, not users.
 3. **Supplier Portal** — Supplier Owner + employee sub-accounts: catalog, markup pricing,
    tax preview, cheque/2307 downloads, subscription fee payment, and a Clients book of the
    schools they serve.
@@ -137,6 +137,12 @@ Warm, cozy palette on glassmorphic surfaces. `src/index.css` holds the whole thi
   optional QR upload) and suppliers pay into those; nothing about the destination account
   is hardcoded. Payments snapshot `method_label` so history survives a method being
   renamed or deleted. Dexie v3 backfills both for existing browsers.
+- **A school is the Principal plus at most one admin.** `school_admin` carries the same
+  workflow permissions as `principal`, so the two are interchangeable in the process and
+  both see the same requests — but `school.staff` is Principal-only, because an admin able
+  to delete the Principal is an admin that can lock a school out of its own account. Every
+  `order_events` row snapshots `actor_role`, so the audit trail says whether the Principal
+  or the Admin acted, and keeps saying so after the account is deleted.
 - **One school login** — the `custodian`, `bac` and `disbursing` roles were removed and
   their permissions folded into `principal`. Separation of duties is now documented on the
   printed output (per-template signatories) rather than enforced by the software; see the

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react'
 import { STATUS_LABEL, type OrderStatus } from '../types'
 
@@ -141,10 +142,31 @@ export function Modal({
   children: ReactNode
   wide?: boolean
 }) {
+  /* Escape closes. Without it the only way out is the X, which leaves people
+     stuck on a phone where the X is a small target at the top of a tall sheet. */
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(42,31,24,0.32)] p-0 backdrop-blur-md sm:items-center sm:p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(42,31,24,0.32)] p-0 backdrop-blur-md sm:items-center sm:p-4"
+      /* Dismiss on the backdrop only — a click that started inside the panel
+         must not close it just because it ended on the overlay. */
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+      role="presentation"
+    >
       <div
+        role="dialog"
+        aria-modal="true"
         className={cx(
           'scroll-thin glass-strong glass-sheen max-h-[92vh] w-full overflow-y-auto rounded-t-3xl sm:rounded-3xl',
           wide ? 'sm:max-w-3xl' : 'sm:max-w-lg',

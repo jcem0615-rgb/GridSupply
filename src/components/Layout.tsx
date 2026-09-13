@@ -39,7 +39,8 @@ const NAV: Record<Portal, NavItem[]> = {
     { to: '/school', label: 'Dashboard', short: 'Home', icon: I.home },
     { to: '/school/orders', label: 'Requests', icon: I.doc },
     { to: '/school/new', label: 'New PR', icon: I.box },
-    { to: '/school/templates', label: 'Templates', icon: I.layout },
+    { to: '/school/templates', label: 'Templates', short: 'Print', icon: I.layout },
+    { to: '/school/team', label: 'Accounts', short: 'Team', icon: I.users },
   ],
   supplier: [
     { to: '/supplier', label: 'Dashboard', short: 'Home', icon: I.home },

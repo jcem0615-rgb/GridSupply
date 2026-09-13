@@ -18,7 +18,8 @@
     "chat-check": "node scripts/chat-check.mjs",
     "clients-check": "node scripts/clients-check.mjs",
     "cheque-check": "node scripts/cheque-check.mjs",
-    "vat-check": "node scripts/vat-check.mjs"
+    "vat-check": "node scripts/vat-check.mjs",
+    "school-check": "node scripts/school-check.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

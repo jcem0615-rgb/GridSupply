@@ -35,6 +35,7 @@ async function logEvent(
     order_id: orderId,
     actor_id: actor.id,
     actor_name: actor.full_name,
+    actor_role: actor.role,
     status_from: from,
     status_to: to,
     note,

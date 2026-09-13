@@ -15,7 +15,7 @@ import { ChequeCard } from './ChequeCard'
 import { PrintDoc, DOC_TITLE, type DocType } from '../print/PrintDocs'
 import { can } from '../../lib/permissions'
 import { setSupplierVatStatus } from '../../lib/orders'
-import { ORDER_FLOW, ROLE_PORTAL, type OrderStatus } from '../../types'
+import { ORDER_FLOW, ROLE_LABEL, ROLE_PORTAL, type OrderStatus } from '../../types'
 
 const TABS = ['Summary', 'Documents', 'Thread'] as const
 
@@ -190,7 +190,15 @@ export function OrderDetail() {
                     <div>
                       <p className="text-sm text-ink-900">{e.note}</p>
                       <p className="text-[11px] text-ink-400">
-                        {e.actor_name} · {formatDateTime(e.created_at)}
+                        {e.actor_name}
+                        {e.actor_role && (
+                          <>
+                            {' · '}
+                            <span className="font-semibold text-ink-600">{ROLE_LABEL[e.actor_role]}</span>
+                          </>
+                        )}
+                        {' · '}
+                        {formatDateTime(e.created_at)}
                       </p>
                     </div>
                   </li>

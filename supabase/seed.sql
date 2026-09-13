@@ -52,12 +52,16 @@ on conflict do nothing;
 --   Principal:  {"full_name":"Dr. Elena Villanueva","role":"principal",
 --                "school_id":"11111111-1111-4111-8111-111111111111",
 --                "position_title":"School Principal IV"}
+--   Admin:      {"full_name":"Grace Tolentino","role":"school_admin",
+--                "school_id":"11111111-1111-4111-8111-111111111111",
+--                "position_title":"Administrative Officer"}
 --   Supplier:   {"full_name":"Marites Delos Reyes","role":"supplier_owner",
 --                "supplier_id":"22222222-2222-4222-8222-222222222222"}
 --   Employee:   {"full_name":"Jayson Bautista","role":"supplier_employee",
 --                "supplier_id":"22222222-2222-4222-8222-222222222222"}
 --   Owner:      {"full_name":"Jose Cruz","role":"owner"}
 --
--- One Principal account covers the whole school side. The officers who sign
+-- The Principal, plus at most one School Admin who performs the same workflow
+-- steps. Only the Principal manages the school's accounts. The officers who sign
 -- the paper (Property Custodian, BAC, Disbursing Officer) are named per
 -- document in print_templates.signatories and do not need accounts.

@@ -3,26 +3,29 @@ import type { OrderStatus, Role } from '../types'
 /**
  * Every guarded action in the app, mapped to the roles allowed to perform it.
  *
- * The school side is a single Principal account: one login performs every
- * school-side step. Separation of duties lives on the printed documents
- * instead — each template names its own signatories (docs/08), so a DV can
- * still be certified by a named Disbursing Officer without that person
- * needing an account.
+ * The school side is the Principal plus at most one School Admin. The admin
+ * performs every school-side step the Principal can, so the two accounts are
+ * interchangeable in the workflow — but only the Principal manages the school's
+ * accounts, so an admin cannot remove the Principal.
+ *
+ * Separation of duties lives on the printed documents instead — each template
+ * names its own signatories (docs/08), so a DV can still be certified by a
+ * named Disbursing Officer without that person needing an account.
  */
 export const PERMISSIONS = {
-  'pr.create': ['principal'],
-  'pr.edit': ['principal'],
-  'pr.submit': ['principal'],
-  'pr.approve': ['principal'],
-  'pr.reject': ['principal'],
-  'po.issue': ['principal'],
+  'pr.create': ['principal', 'school_admin'],
+  'pr.edit': ['principal', 'school_admin'],
+  'pr.submit': ['principal', 'school_admin'],
+  'pr.approve': ['principal', 'school_admin'],
+  'pr.reject': ['principal', 'school_admin'],
+  'po.issue': ['principal', 'school_admin'],
   'po.accept': ['supplier_owner', 'supplier_employee'],
   'po.decline': ['supplier_owner'],
   'delivery.dispatch': ['supplier_owner', 'supplier_employee'],
-  'delivery.receive': ['principal'],
-  'dv.issue': ['principal'],
-  'check.capture': ['principal'],
-  'bir2307.issue': ['principal'],
+  'delivery.receive': ['principal', 'school_admin'],
+  'dv.issue': ['principal', 'school_admin'],
+  'check.capture': ['principal', 'school_admin'],
+  'bir2307.issue': ['principal', 'school_admin'],
   'catalog.manage': ['supplier_owner', 'supplier_employee'],
   'catalog.pricing': ['supplier_owner'],
   'supplier.staff': ['supplier_owner'],
@@ -34,8 +37,11 @@ export const PERMISSIONS = {
   'payment.methods.manage': ['owner'],
   'accounts.manage': ['owner'],
   'branding.manage': ['owner'],
-  'template.customize': ['principal'],
-  'chat.post': ['principal', 'supplier_owner', 'supplier_employee', 'owner'],
+  'template.customize': ['principal', 'school_admin'],
+  'chat.post': ['principal', 'school_admin', 'supplier_owner', 'supplier_employee', 'owner'],
+  /* Only the Principal manages the school's own accounts — an admin that could
+     delete the Principal would be an admin that can lock the school out. */
+  'school.staff': ['principal'],
 } as const satisfies Record<string, readonly Role[]>
 
 export type Permission = keyof typeof PERMISSIONS

@@ -1,12 +1,21 @@
 /** Domain model for GridSupply. Mirrors supabase/schema.sql one-for-one. */
 
-export type Role = 'owner' | 'principal' | 'supplier_owner' | 'supplier_employee'
+export type Role =
+  | 'owner'
+  | 'principal'
+  | 'school_admin'
+  | 'supplier_owner'
+  | 'supplier_employee'
+
+/** A school may hold exactly one admin alongside its Principal. */
+export const MAX_SCHOOL_ADMINS = 1
 
 export type Portal = 'owner' | 'school' | 'supplier'
 
 export const ROLE_PORTAL: Record<Role, Portal> = {
   owner: 'owner',
   principal: 'school',
+  school_admin: 'school',
   supplier_owner: 'supplier',
   supplier_employee: 'supplier',
 }
@@ -19,6 +28,7 @@ export function isKnownRole(role: string | undefined): role is Role {
 export const ROLE_LABEL: Record<Role, string> = {
   owner: 'Platform Owner',
   principal: 'School Principal',
+  school_admin: 'School Admin',
   supplier_owner: 'Supplier Owner',
   supplier_employee: 'Supplier Employee',
 }
@@ -190,6 +200,8 @@ export interface OrderEvent {
   order_id: string
   actor_id: string | null
   actor_name: string
+  /** Snapshotted so the trail still says who acted after a role or account changes. */
+  actor_role: Role | null
   status_from: OrderStatus | null
   status_to: OrderStatus | null
   note: string

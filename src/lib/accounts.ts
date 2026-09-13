@@ -12,12 +12,19 @@ import type { Profile } from '../types'
  * inside their own supplier and nothing else — a supplier resetting a school
  * Principal would hand a vendor the account that approves their own purchase
  * orders, so the tenant boundary is enforced here as well as in RLS.
+ *
+ * A Principal may reset accounts inside their own school. The School Admin
+ * cannot reset anyone, including themselves through this path: an admin able to
+ * reset the Principal could take the school's own account away from it.
  */
 export function canResetPasswordFor(actor: Profile, target: Profile): boolean {
   if (actor.status !== 'active') return false
   if (actor.role === 'owner') return true
   if (actor.role === 'supplier_owner') {
     return !!actor.supplier_id && target.supplier_id === actor.supplier_id
+  }
+  if (actor.role === 'principal') {
+    return !!actor.school_id && target.school_id === actor.school_id
   }
   return false
 }
@@ -26,6 +33,12 @@ export function resetRefusalReason(actor: Profile, target: Profile): string | nu
   if (canResetPasswordFor(actor, target)) return null
   if (actor.role === 'supplier_owner' && target.school_id) {
     return 'A supplier cannot reset a school account. Ask the platform owner.'
+  }
+  if (actor.role === 'principal' && target.supplier_id) {
+    return 'A school cannot reset a supplier account. Ask the platform owner.'
+  }
+  if (actor.role === 'school_admin') {
+    return 'Only the Principal manages school accounts. Ask them to reset it.'
   }
   return 'You do not have permission to reset this account.'
 }

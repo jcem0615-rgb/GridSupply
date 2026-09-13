@@ -9,6 +9,7 @@ import { SchoolDashboard } from './features/school/SchoolDashboard'
 import { PRWizard } from './features/school/PRWizard'
 import { SchoolOrders } from './features/school/SchoolOrders'
 import { TemplateCustomizer } from './features/school/TemplateCustomizer'
+import { SchoolTeamPage } from './features/school/SchoolTeamPage'
 import { SupplierDashboard } from './features/supplier/SupplierDashboard'
 import { SupplierOrders } from './features/supplier/SupplierOrders'
 import { TeamPage } from './features/supplier/TeamPage'
@@ -85,6 +86,7 @@ export default function App() {
       <Route path="/school/orders" element={<Guard portal="school"><SchoolOrders /></Guard>} />
       <Route path="/school/new" element={<Guard portal="school"><PRWizard /></Guard>} />
       <Route path="/school/templates" element={<Guard portal="school"><TemplateCustomizer /></Guard>} />
+      <Route path="/school/team" element={<Guard portal="school"><SchoolTeamPage /></Guard>} />
 
       <Route path="/supplier" element={<Guard portal="supplier"><SupplierDashboard /></Guard>} />
       <Route path="/supplier/orders" element={<Guard portal="supplier"><SupplierOrders /></Guard>} />

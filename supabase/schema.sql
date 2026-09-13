@@ -11,7 +11,7 @@ create extension if not exists "pgcrypto";
 -- expressed on the printed documents via print_templates.signatories, not by
 -- giving every officer a login.
 create type user_role as enum (
-  'owner', 'principal', 'supplier_owner', 'supplier_employee'
+  'owner', 'principal', 'school_admin', 'supplier_owner', 'supplier_employee'
 );
 
 create type account_status as enum ('active', 'paused', 'stopped');
@@ -77,7 +77,7 @@ create table profiles (
   -- A profile belongs to exactly one tenant, except the platform owner.
   constraint profile_tenant_exclusive check (
     (role = 'owner' and school_id is null and supplier_id is null)
-    or (role = 'principal' and school_id is not null and supplier_id is null)
+    or (role in ('principal','school_admin') and school_id is not null and supplier_id is null)
     or (role in ('supplier_owner','supplier_employee') and supplier_id is not null and school_id is null)
   )
 );
@@ -188,6 +188,8 @@ create table order_events (
   order_id uuid not null references orders (id) on delete cascade,
   actor_id uuid references profiles (id) on delete set null,
   actor_name text not null default '',
+  -- Snapshotted: the trail must still say who acted after a role changes.
+  actor_role user_role,
   status_from order_status,
   status_to order_status,
   note text not null default '',
@@ -365,8 +367,27 @@ create policy profiles_supplier_owner_write on profiles for all
 create policy schools_select on schools for select using (is_owner() or id = auth_school_id());
 create policy schools_owner_write on schools for all using (is_owner()) with check (is_owner());
 create policy schools_self_update on schools for update
-  using (id = auth_school_id() and auth_role() = 'principal')
+  using (id = auth_school_id() and auth_role() in ('principal', 'school_admin'))
   with check (id = auth_school_id());
+
+-- The Principal administers accounts inside their own school and nowhere else.
+-- Both clauses are checked so a Principal cannot move an outside profile into
+-- their school, and the role is constrained so they cannot mint an owner.
+-- A school_admin is deliberately excluded: an admin able to delete the
+-- Principal is an admin that can lock the school out of its own account.
+create policy profiles_principal_write on profiles for all
+  using (
+    auth_role() = 'principal'
+    and school_id is not null
+    and school_id = auth_school_id()
+  )
+  with check (
+    auth_role() = 'principal'
+    and school_id is not null
+    and school_id = auth_school_id()
+    and supplier_id is null
+    and role in ('principal', 'school_admin')
+  );
 
 -- Every school can see active suppliers in order to shop the catalog.
 create policy suppliers_select on suppliers for select using (
@@ -395,7 +416,7 @@ create policy orders_select on orders for select using (
   )
 );
 create policy orders_school_insert on orders for insert with check (
-  school_id = auth_school_id() and auth_role() = 'principal'
+  school_id = auth_school_id() and auth_role() in ('principal', 'school_admin')
 );
 create policy orders_school_update on orders for update
   using (school_id = auth_school_id())
@@ -458,7 +479,7 @@ create policy templates_select on print_templates for select using (
   is_owner() or school_id = auth_school_id()
 );
 create policy templates_write on print_templates for all
-  using (school_id = auth_school_id() and auth_role() = 'principal')
+  using (school_id = auth_school_id() and auth_role() in ('principal', 'school_admin'))
   with check (school_id = auth_school_id());
 
 -- ─────────────────────────────────────────────────────────────

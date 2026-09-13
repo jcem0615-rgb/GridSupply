@@ -152,6 +152,20 @@ export class GridSupplyDB extends Dexie {
           row.percentage_tax_atc ??= 'WB080'
         })
     })
+
+    /**
+     * v8 stamps each audit entry with the actor's role, so a trail can say
+     * whether the Principal or the School Admin acted. Entries written before
+     * the admin role existed can only have been the Principal.
+     */
+    this.version(8).upgrade(async (tx) => {
+      await tx
+        .table('order_events')
+        .toCollection()
+        .modify((row: Record<string, unknown>) => {
+          row.actor_role ??= null
+        })
+    })
   }
 }
 

@@ -84,13 +84,14 @@ docs/           01–09, read in order
 | `npm run clients-check` | Verify the supplier clients book and its tenant boundaries |
 | `npm run cheque-check` | Verify cheque capture and download from both portals |
 | `npm run vat-check` | Verify the VAT and non-VAT tax branches, DV and BIR 2307 |
+| `npm run school-check` | Verify the school admin account, its limit and action attribution |
 
 Both browser checks need a **production** build served by `preview` — the service worker
 does not register in dev:
 
 ```bash
 npm run build && npm run preview &
-npm run smoke && npm run pwa-check && npm run auth-check && npm run chat-check && npm run clients-check && npm run cheque-check && npm run vat-check
+npm run smoke && npm run pwa-check && npm run auth-check && npm run chat-check && npm run clients-check && npm run cheque-check && npm run vat-check && npm run school-check
 ```
 
 ## Deployment
