@@ -88,25 +88,36 @@ create index on profiles (supplier_id);
 -- ─────────────────────────────────────────────────────────────
 -- Helper functions — SECURITY DEFINER so policies can read profiles
 -- without recursing through profiles' own RLS.
+--
+-- Every one of them requires status = 'active'. Suspending an account is an
+-- Owner Portal button, but a JWT issued before the suspension stays valid
+-- until it expires, so an account paused or stopped in the UI would otherwise
+-- keep full database access for the rest of its session. Answering null here
+-- makes every tenant-scoped policy fall through to false at once. A suspended
+-- user can still read their own profile row — `profiles_select` matches on
+-- auth.uid() directly — so the app can tell them why they are locked out.
 -- ─────────────────────────────────────────────────────────────
 create or replace function auth_role() returns user_role
 language sql stable security definer set search_path = public as $$
-  select role from profiles where id = auth.uid()
+  select role from profiles where id = auth.uid() and status = 'active'
 $$;
 
 create or replace function auth_school_id() returns uuid
 language sql stable security definer set search_path = public as $$
-  select school_id from profiles where id = auth.uid()
+  select school_id from profiles where id = auth.uid() and status = 'active'
 $$;
 
 create or replace function auth_supplier_id() returns uuid
 language sql stable security definer set search_path = public as $$
-  select supplier_id from profiles where id = auth.uid()
+  select supplier_id from profiles where id = auth.uid() and status = 'active'
 $$;
 
 create or replace function is_owner() returns boolean
 language sql stable security definer set search_path = public as $$
-  select exists (select 1 from profiles where id = auth.uid() and role = 'owner')
+  select exists (
+    select 1 from profiles
+    where id = auth.uid() and role = 'owner' and status = 'active'
+  )
 $$;
 
 -- ─────────────────────────────────────────────────────────────
@@ -131,27 +142,6 @@ create table catalog_items (
 );
 
 create index on catalog_items (supplier_id, active);
-
--- Append-only stock ledger. Each row carries the balance it left behind, so
--- history reads without replaying every movement and a wrong balance is
--- visible against the moves that produced it.
-create table stock_moves (
-  id uuid primary key default gen_random_uuid(),
-  supplier_id uuid not null references suppliers (id) on delete cascade,
-  catalog_item_id uuid not null references catalog_items (id) on delete cascade,
-  qty integer not null,
-  balance_after integer not null check (balance_after >= 0),
-  reason text not null check (
-    reason in ('received', 'order_accepted', 'order_declined', 'adjustment', 'damaged')
-  ),
-  order_id uuid references orders (id) on delete set null,
-  note text not null default '',
-  actor_id uuid references profiles (id) on delete set null,
-  actor_name text not null default '',
-  created_at timestamptz not null default now()
-);
-
-create index on stock_moves (supplier_id, created_at desc);
 
 -- ─────────────────────────────────────────────────────────────
 -- Orders — one row carries the whole PR → PO → IAR → DV → 2307 chain
@@ -194,6 +184,27 @@ create table orders (
 
 create index on orders (school_id, status);
 create index on orders (supplier_id, status);
+
+-- Append-only stock ledger. Each row carries the balance it left behind, so
+-- history reads without replaying every movement and a wrong balance is
+-- visible against the moves that produced it.
+create table stock_moves (
+  id uuid primary key default gen_random_uuid(),
+  supplier_id uuid not null references suppliers (id) on delete cascade,
+  catalog_item_id uuid not null references catalog_items (id) on delete cascade,
+  qty integer not null,
+  balance_after integer not null check (balance_after >= 0),
+  reason text not null check (
+    reason in ('received', 'order_accepted', 'order_declined', 'adjustment', 'damaged')
+  ),
+  order_id uuid references orders (id) on delete set null,
+  note text not null default '',
+  actor_id uuid references profiles (id) on delete set null,
+  actor_name text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create index on stock_moves (supplier_id, created_at desc);
 
 create table order_lines (
   id uuid primary key default gen_random_uuid(),
@@ -368,6 +379,11 @@ create policy profiles_select on profiles for select using (
   or (school_id is not null and school_id = auth_school_id())
   or (supplier_id is not null and supplier_id = auth_supplier_id())
 );
+-- You may edit your own row — name, position title, password-change flags —
+-- but NOT your own privileges. RLS cannot see the old row in a WITH CHECK, so
+-- "did a privileged column move?" is enforced by the trigger further down
+-- (profiles_guard_privileges). Without that guard this policy is a one-line
+-- privilege escalation: any user could set their own role to 'owner'.
 create policy profiles_update_self on profiles for update using (id = auth.uid()) with check (id = auth.uid());
 create policy profiles_owner_write on profiles for all using (is_owner()) with check (is_owner());
 
@@ -448,9 +464,18 @@ create policy orders_school_insert on orders for insert with check (
 create policy orders_school_update on orders for update
   using (school_id = auth_school_id())
   with check (school_id = auth_school_id());
+-- A supplier acts on its own order only at the two points the workflow gives
+-- it, and the WITH CHECK names the states it may leave behind: accept or
+-- decline a PO, then dispatch it. Binding only supplier_id here would let a
+-- supplier mark its own order 'paid'. Settlement columns (cheque number,
+-- paid_at, the DV, the 2307 flag) are guarded by trigger, since a policy
+-- cannot restrict which columns an UPDATE touches.
 create policy orders_supplier_update on orders for update
   using (supplier_id = auth_supplier_id() and status in ('po_issued', 'po_accepted'))
-  with check (supplier_id = auth_supplier_id());
+  with check (
+    supplier_id = auth_supplier_id()
+    and status in ('po_accepted', 'po_declined', 'dispatched')
+  );
 
 -- Child tables inherit visibility from the parent order.
 create or replace function can_see_order(oid uuid) returns boolean
@@ -469,10 +494,21 @@ $$;
 
 create policy order_lines_all on order_lines for all
   using (can_see_order(order_id)) with check (can_see_order(order_id));
-create policy order_events_all on order_events for all
-  using (can_see_order(order_id)) with check (can_see_order(order_id));
-create policy messages_all on messages for all
-  using (can_see_order(order_id)) with check (can_see_order(order_id));
+-- The audit trail is append-only. 'for all' let either party rewrite or delete
+-- the history of a public-funds transaction after the fact, which is the one
+-- thing an audit trail exists to prevent — so there is deliberately no update
+-- or delete policy here, and the actor is bound to the caller.
+create policy order_events_select on order_events for select
+  using (can_see_order(order_id));
+create policy order_events_insert on order_events for insert
+  with check (can_see_order(order_id) and (actor_id is null or actor_id = auth.uid()));
+
+-- Chat is append-only for the same reason: a message quoted in a dispute must
+-- still read the same tomorrow.
+create policy messages_select on messages for select
+  using (can_see_order(order_id));
+create policy messages_insert on messages for insert
+  with check (can_see_order(order_id) and (author_id is null or author_id = auth.uid()));
 
 -- subscription payments: a supplier sees only its own; the owner reviews all.
 create policy subs_select on subscription_payments for select using (
@@ -514,6 +550,127 @@ create policy templates_select on print_templates for select using (
 create policy templates_write on print_templates for all
   using (school_id = auth_school_id() and auth_role() in ('principal', 'school_admin'))
   with check (school_id = auth_school_id());
+
+-- ─────────────────────────────────────────────────────────────
+-- Integrity guards
+-- RLS answers "may you touch this row?". It cannot answer "may you move
+-- THAT column, from THIS value?" — a WITH CHECK sees only the row as it
+-- would become, never as it was. The rules below are exactly the ones that
+-- need the old row, so they are triggers rather than policies.
+-- ─────────────────────────────────────────────────────────────
+
+-- Privilege columns on a profile: role, tenant and status. Everything else on
+-- your own row is yours to edit.
+create or replace function profiles_guard_privileges() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare
+  actor user_role;
+begin
+  -- Migrations, seeds and the service_role key carry no end user; those
+  -- contexts are already trusted and the admin Edge Function needs them.
+  if auth.uid() is null then
+    return new;
+  end if;
+
+  if new.role       is not distinct from old.role
+ and new.school_id  is not distinct from old.school_id
+ and new.supplier_id is not distinct from old.supplier_id
+ and new.status     is not distinct from old.status then
+    return new;                       -- nothing privileged moved
+  end if;
+
+  actor := auth_role();
+
+  if actor = 'owner' then
+    return new;
+  end if;
+
+  -- Nobody but the platform owner edits their own privileges. This is the
+  -- line that stops a supplier employee promoting themselves to 'owner'.
+  if old.id = auth.uid() then
+    raise exception 'you cannot change your own role, tenant or status'
+      using errcode = '42501';
+  end if;
+
+  -- A Principal administers accounts inside their own school, and may mint
+  -- nothing above a school_admin.
+  if actor = 'principal'
+ and old.school_id = auth_school_id()
+ and new.school_id = auth_school_id()
+ and new.supplier_id is null
+ and new.role in ('principal', 'school_admin') then
+    return new;
+  end if;
+
+  -- A Supplier Owner, likewise, inside their own supplier.
+  if actor = 'supplier_owner'
+ and old.supplier_id = auth_supplier_id()
+ and new.supplier_id = auth_supplier_id()
+ and new.school_id is null
+ and new.role in ('supplier_owner', 'supplier_employee') then
+    return new;
+  end if;
+
+  raise exception 'not allowed to change role, tenant or status on this profile'
+    using errcode = '42501';
+end;
+$$;
+
+create trigger profiles_guard_privileges_trg
+before update on profiles
+for each row execute function profiles_guard_privileges();
+
+-- Order columns that decide money. A supplier legitimately accepts, declines
+-- and dispatches; it does not issue the voucher, cut the cheque, restate the
+-- total or decide its own VAT treatment — the school is the withholding agent.
+create or replace function orders_guard_settlement() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null or is_owner() then
+    return new;
+  end if;
+
+  -- Withholdings on an issued voucher must not move: once the DV exists the
+  -- VAT snapshot is frozen for everyone, the school included.
+  if old.dv_issued_at is not null
+ and new.supplier_vat_registered is distinct from old.supplier_vat_registered then
+    raise exception 'VAT status is locked once the disbursement voucher is issued'
+      using errcode = '42501';
+  end if;
+
+  if auth_supplier_id() is null or new.supplier_id is distinct from auth_supplier_id() then
+    return new;                       -- not the supplier side of this order
+  end if;
+
+  if new.status is distinct from old.status
+ and new.status not in ('po_accepted', 'po_declined', 'dispatched') then
+    raise exception 'a supplier may only accept, decline or dispatch an order'
+      using errcode = '42501';
+  end if;
+
+  if new.school_id               is distinct from old.school_id
+  or new.gross_total             is distinct from old.gross_total
+  or new.supplier_vat_registered is distinct from old.supplier_vat_registered
+  or new.po_number               is distinct from old.po_number
+  or new.approved_by             is distinct from old.approved_by
+  or new.approved_at             is distinct from old.approved_at
+  or new.dv_number               is distinct from old.dv_number
+  or new.dv_issued_at            is distinct from old.dv_issued_at
+  or new.paid_at                 is distinct from old.paid_at
+  or new.check_number            is distinct from old.check_number
+  or new.check_photo_id          is distinct from old.check_photo_id
+  or new.bir_2307_issued         is distinct from old.bir_2307_issued then
+    raise exception 'a supplier may not change the school''s approval or settlement fields'
+      using errcode = '42501';
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger orders_guard_settlement_trg
+before update on orders
+for each row execute function orders_guard_settlement();
 
 -- ─────────────────────────────────────────────────────────────
 -- Storage buckets — private, with per-tenant path prefixes.
@@ -574,7 +731,10 @@ begin
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data ->> 'full_name', ''),
-    coalesce((new.raw_user_meta_data ->> 'role')::user_role, 'principal'),
+    -- No default. A missing role in the invite metadata is a bug in the
+    -- inviting code, and defaulting it to 'principal' would hand the new
+    -- account a school Principal's permissions; fail the insert instead.
+    (new.raw_user_meta_data ->> 'role')::user_role,
     nullif(new.raw_user_meta_data ->> 'school_id', '')::uuid,
     nullif(new.raw_user_meta_data ->> 'supplier_id', '')::uuid,
     new.raw_user_meta_data ->> 'position_title'

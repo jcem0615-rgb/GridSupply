@@ -95,6 +95,17 @@ Warm, cozy palette on glassmorphic surfaces. `src/index.css` holds the whole thi
 - **Auth wiring** — `handle_new_user()` builds the `profiles` row from invite metadata.
   Admin-invite only; no self-service sign-up, which is correct for closed procurement.
 - **Print customiser** — slot-based, not free drag-and-drop. Reasoning in `docs/08`.
+- **RLS decides who may touch a row; triggers decide which columns may move.** A
+  `WITH CHECK` sees the row only as it would become, never as it was, so every "you may
+  not *change* that field" rule lives in a `BEFORE UPDATE` trigger instead.
+  `profiles_guard_privileges` stops anyone editing their own `role`/tenant/`status` — the
+  self-update policy alone let a `supplier_employee` set `role = 'owner'` and read the
+  whole platform, reproduced against a real Postgres — and `orders_guard_settlement` keeps
+  a supplier off the cheque, the voucher, the total and the VAT snapshot. The four
+  `auth_*` helpers require `status = 'active'`, so suspending an account revokes access
+  immediately rather than when its JWT expires. `order_events` and `messages` have no
+  update or delete policy at all: the audit trail for public funds is append-only. See
+  `docs/02`.
 - **Deleting a tenant with orders is refused, not cascaded.** Purchase orders and vouchers
   are an audit trail for public funds. The Owner Portal blocks the delete and points at
   `stopped`, which revokes access and is reversible. A tenant with no orders deletes, and
@@ -177,8 +188,11 @@ Warm, cozy palette on glassmorphic surfaces. `src/index.css` holds the whole thi
 
 ## Open items
 - **Supabase project is not provisioned.** The app runs local-first against IndexedDB; wire
-  `.env` and apply `supabase/schema.sql` to move it onto Postgres. The RLS policies are
-  written but have not been exercised against a live database.
+  `.env` and apply `supabase/schema.sql` to move it onto Postgres. The policies are no
+  longer unexercised: `npm run rls` applies the schema to a throwaway local Postgres and
+  runs 33 assertions against it as the `authenticated` role (`supabase/tests/`). What that
+  cannot cover is Supabase itself — the real `auth` schema, PostgREST's role switching and
+  the storage policies are still first exercised on a live project.
 - **Web Push has no Edge Function yet.** The service worker handles `push` and
   `notificationclick`; the sender and the subscription table are still to build.
 - **Admin-set passwords need an Edge Function.** Setting another user's password in

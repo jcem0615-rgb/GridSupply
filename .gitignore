@@ -28,5 +28,5 @@ dist-ssr
 *.sln
 *.sw?
 
-# Playwright screenshots from npm run smoke
-smoke-screenshots/
+# Playwright screenshots from the verification scripts
+*-screenshots/

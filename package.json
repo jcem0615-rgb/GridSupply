@@ -12,6 +12,7 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "icons": "node scripts/generate-icons.mjs",
+    "rls": "bash scripts/rls-check.sh",
     "smoke": "node scripts/smoke.mjs",
     "pwa-check": "node scripts/pwa-check.mjs",
     "auth-check": "node scripts/auth-check.mjs",
