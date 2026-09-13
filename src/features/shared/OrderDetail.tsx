@@ -15,7 +15,7 @@ import { ChequeCard } from './ChequeCard'
 import { PrintDoc, DOC_TITLE, type DocType } from '../print/PrintDocs'
 import { can } from '../../lib/permissions'
 import { setSupplierVatStatus } from '../../lib/orders'
-import { ORDER_FLOW, ROLE_LABEL, ROLE_PORTAL, type OrderStatus } from '../../types'
+import { ORDER_FLOW, ROLE_LABEL, ROLE_PORTAL, formatQty, type OrderStatus } from '../../types'
 
 const TABS = ['Summary', 'Documents', 'Thread'] as const
 
@@ -170,9 +170,7 @@ export function OrderDetail() {
                           <span className="font-semibold text-ink-900">{l.name}</span>
                           <span className="block text-[11px] text-ink-400">{l.description}</span>
                         </td>
-                        <td className="py-2 text-right tabular-nums">
-                          {l.qty} {l.unit}
-                        </td>
+                        <td className="py-2 text-right tabular-nums">{formatQty(l.qty, l.unit)}</td>
                         <td className="py-2 text-right tabular-nums">{peso(l.unit_price)}</td>
                         <td className="py-2 text-right font-semibold tabular-nums">{peso(l.line_total)}</td>
                       </tr>

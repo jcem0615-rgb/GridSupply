@@ -1,5 +1,6 @@
 import { peso, computeTax, birQuarter } from '../../lib/money'
 import { formatDate } from '../../lib/ids'
+import { UNIT_LABEL } from '../../types'
 import type {
   Attachment,
   Order,
@@ -106,7 +107,7 @@ function LineTable({ lines, showPrices = true }: { lines: OrderLine[]; showPrice
               <span className="font-semibold">{l.name}</span>
               {l.description && <span className="block text-[9px] text-neutral-500">{l.description}</span>}
             </td>
-            <td className="border border-neutral-400 px-2 py-1 text-center">{l.unit}</td>
+            <td className="border border-neutral-400 px-2 py-1 text-center">{UNIT_LABEL[l.unit]}</td>
             <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">{l.qty}</td>
             {showPrices && <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">{peso(l.unit_price)}</td>}
             {showPrices && <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">{peso(l.line_total)}</td>}

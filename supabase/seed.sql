@@ -37,13 +37,14 @@ insert into tax_config (vat_rate, ewt_rate, final_vat_withheld_rate, percentage_
 values (0.12, 0.01, 0.05, 0.03, 'WC158', 'WV010', 'WB080', '2024-01-01')
 on conflict do nothing;
 
-insert into catalog_items (supplier_id, name, description, unit, base_cost, markup_pct, selling_price) values
-  ('22222222-2222-4222-8222-222222222222', 'Bond Paper A4', 'Substance 20, 500 sheets per ream', 'ream', 210, 18, 247.80),
-  ('22222222-2222-4222-8222-222222222222', 'Bond Paper Long', 'Substance 20, 500 sheets per ream', 'ream', 245, 18, 289.10),
-  ('22222222-2222-4222-8222-222222222222', 'Whiteboard Marker', 'Refillable, black — box of 12', 'box', 320, 22, 390.40),
-  ('22222222-2222-4222-8222-222222222222', 'Manila Paper', '20 sheets per pack', 'pack', 85, 25, 106.25),
-  ('22222222-2222-4222-8222-222222222222', 'Chalk, Dustless', '100 pieces per box', 'box', 145, 20, 174.00),
-  ('22222222-2222-4222-8222-222222222222', 'Ballpen, Black', '50 pieces per box', 'box', 260, 20, 312.00)
+insert into catalog_items (supplier_id, name, description, unit, pack_size, base_cost, markup_pct,
+                           selling_price, stock_on_hand, reorder_level) values
+  ('22222222-2222-4222-8222-222222222222', 'Bond Paper A4', 'Substance 20', 'ream', 500, 210, 18, 247.80, 240, 40),
+  ('22222222-2222-4222-8222-222222222222', 'Bond Paper Long', 'Substance 20', 'ream', 500, 245, 18, 289.10, 180, 40),
+  ('22222222-2222-4222-8222-222222222222', 'Whiteboard Marker', 'Refillable, black', 'box', 12, 320, 22, 390.40, 64, 12),
+  ('22222222-2222-4222-8222-222222222222', 'Manila Paper', 'Assorted colours', 'pack', 20, 85, 25, 106.25, 30, 10),
+  ('22222222-2222-4222-8222-222222222222', 'Chalk, Dustless', 'White', 'box', 100, 145, 20, 174.00, 8, 10),
+  ('22222222-2222-4222-8222-222222222222', 'Ballpen, Black', 'Fine point', 'box', 50, 260, 20, 312.00, 96, 20)
 on conflict do nothing;
 
 -- Invite the test users from the Supabase dashboard (Authentication → Invite)

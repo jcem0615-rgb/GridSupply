@@ -10,9 +10,9 @@ import { can } from '../../lib/permissions'
 import { Button, Card, Empty, Field, Input, Modal, Select, Textarea, cx } from '../../components/ui'
 import { Pager } from '../../components/Pager'
 import { usePaged } from '../../lib/usePaged'
-import type { CatalogItem, ItemUnit } from '../../types'
-
-const UNITS: ItemUnit[] = ['pc', 'box', 'ream', 'pack', 'set', 'bot', 'unit']
+import { ALL_UNITS, UNIT_LABEL, type CatalogItem, type ItemUnit } from '../../types'
+import { STOCK_LABEL, STOCK_TONE, stockState } from '../../lib/inventory'
+import { Badge } from '../../components/ui'
 
 const blank = (supplierId: string): CatalogItem => ({
   id: uuid(),
@@ -20,10 +20,14 @@ const blank = (supplierId: string): CatalogItem => ({
   name: '',
   description: '',
   unit: 'pc',
+  pack_size: 0,
   base_cost: 0,
   markup_pct: 20,
   selling_price: 0,
   active: true,
+  stock_on_hand: 0,
+  reorder_level: 0,
+  stock_updated_at: null,
   created_at: nowIso(),
 })
 
@@ -91,7 +95,17 @@ export function CatalogPage() {
                     {!i.active && <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] text-ink-400">hidden</span>}
                   </p>
                   <p className="truncate text-xs text-ink-400">
-                    Cost {peso(i.base_cost)} · +{i.markup_pct}% · per {i.unit}
+                    Cost {peso(i.base_cost)} · +{i.markup_pct}% · per {UNIT_LABEL[i.unit].toLowerCase()}
+                    {i.pack_size > 0 && ` (${i.pack_size})`}
+                  </p>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-ink-400">
+                    <Badge tone={STOCK_TONE[stockState(i)]}>{STOCK_LABEL[stockState(i)]}</Badge>
+                    {stockState(i) !== 'untracked' && (
+                      <span>
+                        {i.stock_on_hand} on hand
+                        {i.reorder_level > 0 && ` · reorder at ${i.reorder_level}`}
+                      </span>
+                    )}
                   </p>
                 </div>
                 <div className="shrink-0 text-right">
@@ -122,13 +136,50 @@ export function CatalogPage() {
               />
             </Field>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Unit">
+              <Field label="Unit of measure" hint="How schools buy it.">
                 <Select value={editing.unit} onChange={(e) => setEditing({ ...editing, unit: e.target.value as ItemUnit })}>
-                  {UNITS.map((u) => (
-                    <option key={u}>{u}</option>
+                  {ALL_UNITS.map((u) => (
+                    <option key={u} value={u}>
+                      {UNIT_LABEL[u]}
+                    </option>
                   ))}
                 </Select>
               </Field>
+              <Field
+                label={`Contents per ${UNIT_LABEL[editing.unit].toLowerCase()}`}
+                hint="Optional — e.g. 500 sheets per ream. Leave 0 if it does not apply."
+              >
+                <Input
+                  inputMode="numeric"
+                  value={editing.pack_size || ''}
+                  onChange={(e) => setEditing({ ...editing, pack_size: Number(e.target.value.replace(/\D/g, '')) || 0 })}
+                  disabled={!canPrice}
+                />
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Field label={`Stock on hand (${UNIT_LABEL[editing.unit].toLowerCase()})`}>
+                <Input
+                  inputMode="numeric"
+                  value={editing.stock_on_hand || ''}
+                  onChange={(e) =>
+                    setEditing({ ...editing, stock_on_hand: Number(e.target.value.replace(/\D/g, '')) || 0 })
+                  }
+                />
+              </Field>
+              <Field label="Reorder level" hint="Warn at or below this.">
+                <Input
+                  inputMode="numeric"
+                  value={editing.reorder_level || ''}
+                  onChange={(e) =>
+                    setEditing({ ...editing, reorder_level: Number(e.target.value.replace(/\D/g, '')) || 0 })
+                  }
+                />
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
               <Field label="Base cost">
                 <Input
                   inputMode="decimal"

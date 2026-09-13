@@ -59,7 +59,7 @@ src/
   features/
     auth/       login and demo role picker
     school/     dashboard · PR wizard · orders · print-template customiser
-    supplier/   dashboard · catalog with markup slider · orders · clients · billing · team
+    supplier/   dashboard · catalog · inventory ledger · orders · clients · billing · team
     owner/      dashboard · accounts CRUD · payment methods · payment review queue · branding
     shared/     order detail · lifecycle actions · order chat
     print/      PR · PO · IAR · DV · BIR 2307 sheets
@@ -85,13 +85,14 @@ docs/           01–09, read in order
 | `npm run cheque-check` | Verify cheque capture and download from both portals |
 | `npm run vat-check` | Verify the VAT and non-VAT tax branches, DV and BIR 2307 |
 | `npm run school-check` | Verify the school admin account, its limit and action attribution |
+| `npm run inventory-check` | Verify units of measure and the supplier stock ledger |
 
 Both browser checks need a **production** build served by `preview` — the service worker
 does not register in dev:
 
 ```bash
 npm run build && npm run preview &
-npm run smoke && npm run pwa-check && npm run auth-check && npm run chat-check && npm run clients-check && npm run cheque-check && npm run vat-check && npm run school-check
+npm run smoke && npm run pwa-check && npm run auth-check && npm run chat-check && npm run clients-check && npm run cheque-check && npm run vat-check && npm run school-check && npm run inventory-check
 ```
 
 ## Deployment

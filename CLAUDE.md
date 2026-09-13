@@ -16,8 +16,8 @@ capture in the field.
    workflow steps: PR/PO/DV creation, print template customisation, cheque photo capture.
    The Custodian, BAC and Disbursing Officer are document signatories, not users.
 3. **Supplier Portal** — Supplier Owner + employee sub-accounts: catalog, markup pricing,
-   tax preview, cheque/2307 downloads, subscription fee payment, and a Clients book of the
-   schools they serve.
+   tax preview, inventory with a stock ledger, cheque/2307 downloads, subscription fee
+   payment, and a Clients book of the schools they serve.
 
 All three share one Supabase project, separated entirely by Row Level Security — never by
 separate deployments.
@@ -119,6 +119,20 @@ Warm, cozy palette on glassmorphic surfaces. `src/index.css` holds the whole thi
   worked; it was unreachable unless you already knew to open an order and click the third
   tab. Unread counts exclude system events, and read markers stay local (never enqueued).
   See `docs/07`.
+- **Units of measure are spelled out, never abbreviated, wherever someone chooses or
+  reads a quantity.** "bot" is obvious to whoever typed it and to nobody else. `UNIT_LABEL`
+  / `UNIT_PLURAL` / `formatQty` in `types` are the only place plurals are formed — English
+  plurals are not a suffix, and "Boxs" shipped once already. Items also carry `pack_size`
+  ("500 per ream") so a buyer knows what one unit contains.
+- **Inventory is an append-only ledger, not a mutable counter.** Every movement writes a
+  `stock_moves` row carrying `balance_after`, so history reads without replaying the ledger
+  and a wrong balance is visible against the moves that produced it. Stock clamps at zero —
+  a ledger implying −3 boxes on hand is a ledger nobody trusts. Accepting a PO draws stock
+  down, because acceptance is the point a supplier commits to filling it; declining returns
+  it. An item with no reorder level and no stock reads "not tracked" rather than "out", so
+  a supplier who never counted their shelves does not open the app to a wall of red. Stock
+  levels are supplier-only in RLS: a school has no business reading how thin a vendor's
+  shelves are before negotiating.
 - **Long lists are paginated client-side.** `usePaged` + `<Pager>` cover the PR wizard's
   item picker (10/page), the supplier catalog (12/page) and the order lists (15/page).
   Selections in the wizard are keyed by item id, so they survive paging and searching; a

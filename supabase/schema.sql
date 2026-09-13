@@ -118,14 +118,40 @@ create table catalog_items (
   name text not null,
   description text not null default '',
   unit text not null default 'pc',
+  -- What one unit contains, e.g. 500 sheets per ream. 0 when not meaningful.
+  pack_size integer not null default 0 check (pack_size >= 0),
   base_cost numeric(12,2) not null check (base_cost >= 0),
   markup_pct numeric(5,2) not null default 0 check (markup_pct >= 0),
   selling_price numeric(12,2) not null check (selling_price >= 0),
   active boolean not null default true,
+  stock_on_hand integer not null default 0 check (stock_on_hand >= 0),
+  reorder_level integer not null default 0 check (reorder_level >= 0),
+  stock_updated_at timestamptz,
   created_at timestamptz not null default now()
 );
 
 create index on catalog_items (supplier_id, active);
+
+-- Append-only stock ledger. Each row carries the balance it left behind, so
+-- history reads without replaying every movement and a wrong balance is
+-- visible against the moves that produced it.
+create table stock_moves (
+  id uuid primary key default gen_random_uuid(),
+  supplier_id uuid not null references suppliers (id) on delete cascade,
+  catalog_item_id uuid not null references catalog_items (id) on delete cascade,
+  qty integer not null,
+  balance_after integer not null check (balance_after >= 0),
+  reason text not null check (
+    reason in ('received', 'order_accepted', 'order_declined', 'adjustment', 'damaged')
+  ),
+  order_id uuid references orders (id) on delete set null,
+  note text not null default '',
+  actor_id uuid references profiles (id) on delete set null,
+  actor_name text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create index on stock_moves (supplier_id, created_at desc);
 
 -- ─────────────────────────────────────────────────────────────
 -- Orders — one row carries the whole PR → PO → IAR → DV → 2307 chain
@@ -333,6 +359,7 @@ alter table tax_config            enable row level security;
 alter table branding              enable row level security;
 alter table print_templates       enable row level security;
 alter table supplier_clients      enable row level security;
+alter table stock_moves           enable row level security;
 
 -- profiles: read yourself and your own tenant's staff; owner reads all.
 create policy profiles_select on profiles for select using (
@@ -468,6 +495,12 @@ create policy tax_write on tax_config for all using (is_owner()) with check (is_
 
 create policy branding_select on branding for select using (auth.uid() is not null);
 create policy branding_write on branding for all using (is_owner()) with check (is_owner());
+
+-- Stock levels are the supplier's own commercial information; a school has no
+-- business reading how thin a vendor's shelves are before negotiating.
+create policy stock_moves_all on stock_moves for all
+  using (supplier_id = auth_supplier_id())
+  with check (supplier_id = auth_supplier_id());
 
 -- The notes are the supplier's private CRM. A school must not read what a
 -- vendor writes about it, so there is no school-side select policy at all.

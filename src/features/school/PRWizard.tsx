@@ -10,7 +10,7 @@ import { Button, Card, Empty, Field, Input, Select, Textarea, cx } from '../../c
 import { Pager } from '../../components/Pager'
 import { usePaged } from '../../lib/usePaged'
 import { can } from '../../lib/permissions'
-import type { CatalogItem } from '../../types'
+import { UNIT_LABEL, UNIT_PLURAL, formatQty, type CatalogItem } from '../../types'
 
 const FUND_SOURCES = ['MOOE', 'School MOOE — Downloaded', 'Special Education Fund (SEF)', 'Canteen Fund', 'PTA Fund']
 
@@ -229,7 +229,11 @@ export function PRWizard() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-ink-900">{c.name}</p>
                     <p className="truncate text-xs text-ink-400">
-                      {peso(c.selling_price)} / {c.unit} · {c.description}
+                      <span className="font-semibold text-ink-600">
+                        {peso(c.selling_price)} per {UNIT_LABEL[c.unit].toLowerCase()}
+                      </span>
+                      {c.pack_size > 0 && ` · ${c.pack_size} per ${UNIT_LABEL[c.unit].toLowerCase()}`}
+                      {c.description && ` · ${c.description}`}
                     </p>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -247,8 +251,11 @@ export function PRWizard() {
                         setQty((q) => ({ ...q, [c.id]: Math.max(0, Number(e.target.value.replace(/\D/g, '')) || 0) }))
                       }
                       className="h-8 w-12 rounded-lg border border-ink-200 text-center text-sm font-bold tabular-nums"
-                      aria-label={`Quantity of ${c.name}`}
+                      aria-label={`Quantity of ${c.name} in ${UNIT_LABEL[c.unit].toLowerCase()}`}
                     />
+                    <span className="w-14 shrink-0 text-[11px] font-semibold text-ink-400">
+                      {(qty[c.id] ?? 0) === 1 ? UNIT_LABEL[c.unit] : UNIT_PLURAL[c.unit]}
+                    </span>
                     <button
                       onClick={() => setQty((q) => ({ ...q, [c.id]: (q[c.id] ?? 0) + 1 }))}
                       className="h-8 w-8 rounded-lg border border-ink-200 text-sm font-bold text-ink-600"
@@ -291,7 +298,7 @@ export function PRWizard() {
                 {lines.map((l) => (
                   <tr key={l.name} className="border-b border-ink-100">
                     <td className="py-2 text-ink-900">{l.name}</td>
-                    <td className="py-2 text-right tabular-nums">{l.qty} {l.unit}</td>
+                    <td className="py-2 text-right tabular-nums">{formatQty(l.qty, l.unit)}</td>
                     <td className="py-2 text-right tabular-nums">{peso(l.unit_price)}</td>
                     <td className="py-2 text-right font-semibold tabular-nums">{peso(l.qty * l.unit_price)}</td>
                   </tr>

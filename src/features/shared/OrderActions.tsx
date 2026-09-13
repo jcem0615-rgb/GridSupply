@@ -17,6 +17,7 @@ import {
   rejectPR,
   submitPR,
 } from '../../lib/orders'
+import { consumeForOrder } from '../../lib/inventory'
 import { Button, Field, Input, Modal, Textarea } from '../../components/ui'
 import { PhotoCapture } from '../../components/PhotoCapture'
 import type { Attachment, Order } from '../../types'
@@ -82,7 +83,17 @@ export function OrderActions({ order }: { order: Order }) {
     )
   if (allow('po.accept'))
     actions.push(
-      <Button key="accept" onClick={() => run(() => acceptPO(order.id, profile))} disabled={busy} full>
+      <Button
+        key="accept"
+        onClick={() =>
+          run(async () => {
+            await acceptPO(order.id, profile)
+            await consumeForOrder(profile, order, -1)
+          })
+        }
+        disabled={busy}
+        full
+      >
         Accept order
       </Button>,
     )

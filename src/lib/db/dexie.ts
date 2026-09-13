@@ -9,6 +9,7 @@ import type {
   OrderLine,
   OutboxEntry,
   PaymentMethod,
+  StockMove,
   SupplierClient,
   ThreadRead,
   PrintTemplate,
@@ -39,6 +40,7 @@ export class GridSupplyDB extends Dexie {
   tax_config!: Table<TaxConfig, string>
   branding!: Table<BrandingSettings, string>
   print_templates!: Table<PrintTemplate, string>
+  stock_moves!: Table<StockMove, string>
   supplier_clients!: Table<SupplierClient, string>
   thread_reads!: Table<ThreadRead, string>
   outbox!: Table<OutboxEntry, number>
@@ -166,6 +168,26 @@ export class GridSupplyDB extends Dexie {
           row.actor_role ??= null
         })
     })
+
+    /**
+     * v9 adds the stock ledger and the per-item fields it moves. Existing items
+     * get zero stock and no reorder level, which reads as "not tracked" rather
+     * than as "out of stock" — a supplier who never counted their shelves
+     * should not open the app to a wall of red.
+     */
+    this.version(9)
+      .stores({ stock_moves: 'id, supplier_id, catalog_item_id, created_at' })
+      .upgrade(async (tx) => {
+        await tx
+          .table('catalog_items')
+          .toCollection()
+          .modify((row: Record<string, unknown>) => {
+            row.pack_size ??= 0
+            row.stock_on_hand ??= 0
+            row.reorder_level ??= 0
+            row.stock_updated_at ??= null
+          })
+      })
   }
 }
 

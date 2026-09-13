@@ -85,7 +85,76 @@ export interface Supplier {
   created_at: string
 }
 
-export type ItemUnit = 'pc' | 'box' | 'ream' | 'pack' | 'set' | 'bot' | 'unit'
+export type ItemUnit =
+  | 'pc'
+  | 'box'
+  | 'ream'
+  | 'pack'
+  | 'set'
+  | 'bot'
+  | 'unit'
+  | 'dozen'
+  | 'roll'
+  | 'bundle'
+  | 'can'
+  | 'tube'
+  | 'gal'
+  | 'ltr'
+  | 'kg'
+  | 'm'
+  | 'sheet'
+
+/**
+ * Spelled out wherever someone has to choose or read a quantity. "bot" and
+ * "rm" are obvious to whoever typed them and to nobody else — a buyer ordering
+ * 20 of something should never have to guess whether that is 20 bottles or 20
+ * boxes of bottles.
+ */
+export const UNIT_LABEL: Record<ItemUnit, string> = {
+  pc: 'Piece',
+  box: 'Box',
+  ream: 'Ream',
+  pack: 'Pack',
+  set: 'Set',
+  bot: 'Bottle',
+  unit: 'Unit',
+  dozen: 'Dozen',
+  roll: 'Roll',
+  bundle: 'Bundle',
+  can: 'Can',
+  tube: 'Tube',
+  gal: 'Gallon',
+  ltr: 'Litre',
+  kg: 'Kilogram',
+  m: 'Metre',
+  sheet: 'Sheet',
+}
+
+export const UNIT_PLURAL: Record<ItemUnit, string> = {
+  pc: 'Pieces',
+  box: 'Boxes',
+  ream: 'Reams',
+  pack: 'Packs',
+  set: 'Sets',
+  bot: 'Bottles',
+  unit: 'Units',
+  dozen: 'Dozens',
+  roll: 'Rolls',
+  bundle: 'Bundles',
+  can: 'Cans',
+  tube: 'Tubes',
+  gal: 'Gallons',
+  ltr: 'Litres',
+  kg: 'Kilograms',
+  m: 'Metres',
+  sheet: 'Sheets',
+}
+
+export const ALL_UNITS = Object.keys(UNIT_LABEL) as ItemUnit[]
+
+/** "2 Boxes", "1 Ream" — for anywhere a quantity is shown to a person. */
+export const formatQty = (qty: number, unit: ItemUnit) =>
+  `${qty} ${qty === 1 ? UNIT_LABEL[unit] : UNIT_PLURAL[unit]}`
 
 export interface CatalogItem {
   id: string
@@ -93,11 +162,45 @@ export interface CatalogItem {
   name: string
   description: string
   unit: ItemUnit
+  /** What one unit contains, e.g. 500 sheets per ream. 0 when not meaningful. */
+  pack_size: number
   base_cost: number
   markup_pct: number
   /** base_cost * (1 + markup_pct/100), VAT-inclusive price quoted to schools. */
   selling_price: number
   active: boolean
+  /** Units on hand. Decremented when a purchase order is accepted. */
+  stock_on_hand: number
+  /** Raises a low-stock warning at or below this level. */
+  reorder_level: number
+  stock_updated_at: string | null
+  created_at: string
+}
+
+export type StockMoveReason = 'received' | 'order_accepted' | 'order_declined' | 'adjustment' | 'damaged'
+
+export const STOCK_REASON_LABEL: Record<StockMoveReason, string> = {
+  received: 'Stock received',
+  order_accepted: 'Reserved for order',
+  order_declined: 'Returned from declined order',
+  adjustment: 'Manual adjustment',
+  damaged: 'Damaged or lost',
+}
+
+/** Append-only stock ledger: the running balance is always reconstructible. */
+export interface StockMove {
+  id: string
+  supplier_id: string
+  catalog_item_id: string
+  /** Signed: positive adds to stock, negative removes. */
+  qty: number
+  /** Balance after this move, so history reads without replaying the ledger. */
+  balance_after: number
+  reason: StockMoveReason
+  order_id: string | null
+  note: string
+  actor_id: string | null
+  actor_name: string
   created_at: string
 }
 
