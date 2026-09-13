@@ -192,10 +192,26 @@ export interface StockMove {
   id: string
   supplier_id: string
   catalog_item_id: string
-  /** Signed: positive adds to stock, negative removes. */
+  /**
+   * Signed, and always in the item's own stocking unit: positive adds to
+   * stock, negative removes. The ledger has one unit or `balance_after` means
+   * nothing.
+   */
   qty: number
   /** Balance after this move, so history reads without replaying the ledger. */
   balance_after: number
+  /**
+   * What the supplier actually counted, before conversion. Stock arrives in
+   * whatever the delivery was packed in — ten boxes of twelve reams — and a
+   * ledger that records only the converted 120 hides the arithmetic that
+   * produced it. These three say "10 Boxes at 12 Reams each" so a wrong
+   * balance is legible against the entry that caused it. For a plain count
+   * `entry_unit` is the item's own unit and `entry_factor` is 1.
+   */
+  entry_qty: number
+  entry_unit: ItemUnit
+  /** Stocking units contained in one `entry_unit`. Always >= 1. */
+  entry_factor: number
   reason: StockMoveReason
   order_id: string | null
   note: string

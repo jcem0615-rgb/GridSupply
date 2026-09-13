@@ -188,6 +188,31 @@ export class GridSupplyDB extends Dexie {
             row.stock_updated_at ??= null
           })
       })
+
+    /**
+     * v10 records what a stock movement was counted in. Every existing row was
+     * entered as a plain count in the item's own unit, so the entry is the
+     * quantity itself at a factor of 1 — the unit has to be read off the item
+     * rather than stored blank, or the ledger would start saying "10" with no
+     * noun attached, which is the thing units exist to prevent.
+     */
+    this.version(10).upgrade(async (tx) => {
+      const units = new Map<string, string>()
+      await tx
+        .table('catalog_items')
+        .toCollection()
+        .each((row: Record<string, unknown>) => {
+          units.set(row.id as string, (row.unit as string) ?? 'pc')
+        })
+      await tx
+        .table('stock_moves')
+        .toCollection()
+        .modify((row: Record<string, unknown>) => {
+          row.entry_qty ??= row.qty
+          row.entry_unit ??= units.get(row.catalog_item_id as string) ?? 'pc'
+          row.entry_factor ??= 1
+        })
+    })
   }
 }
 

@@ -98,6 +98,38 @@ await p.getByRole('button',{name:'Movements'}).click(); await p.waitForTimeout(6
 ok((await p.locator('body').innerText()).includes('Reserved for order'), 'ledger attributes the draw-down to the order')
 await p.screenshot({path:`${O}/ledger.png`})
 
+// Counting in a different unit converts into the stocking unit.
+await p.getByRole('button',{name:'Stock'}).click(); await p.waitForTimeout(500)
+const chalk2 = p.locator('li', { hasText: 'Chalk, Dustless' }).first()
+await chalk2.getByRole('button',{name:'Adjust'}).click(); await p.waitForTimeout(300)
+ok(await p.getByLabel('Unit of measure').isVisible(), 'the adjust form offers a unit of measure')
+ok((await p.getByLabel('Unit of measure').inputValue()) === 'box',
+   'it defaults to the item\'s own stocking unit')
+ok(!(await p.getByLabel('Units per pack').isVisible().catch(()=>false)),
+   'no conversion is asked for while counting in the stocking unit')
+
+await p.getByLabel('Unit of measure').selectOption('pack'); await p.waitForTimeout(250)
+await p.getByLabel('Quantity').fill('3')
+ok(await p.getByLabel('Units per pack').isVisible(),
+   'choosing another unit asks how many stocking units it holds')
+ok(await p.getByRole('button',{name:'Record movement'}).isDisabled(),
+   'the form will not record a conversion with no factor')
+
+await p.getByLabel('Units per pack').fill('6'); await p.waitForTimeout(250)
+const preview = await p.locator('.glass-quiet', { hasText: 'on hand becomes' }).first().innerText()
+ok(preview.includes('3 Packs') && preview.includes('18 Boxes'),
+   'the form shows the conversion before it is recorded')
+ok(preview.includes('66 Boxes'), 'and the balance the movement will leave behind')
+await p.screenshot({path:`${O}/adjust-units.png`})
+
+await p.getByRole('button',{name:'Record movement'}).click(); await p.waitForTimeout(800)
+ok((await p.locator('li', { hasText: 'Chalk, Dustless' }).first().innerText()).includes('66 Boxes'),
+   '3 packs of 6 boxes added 18 boxes, not 3')
+await p.getByRole('button',{name:'Movements'}).click(); await p.waitForTimeout(600)
+const conv = await p.locator('body').innerText()
+ok(conv.includes('3 Packs × 6 Boxes = 18 Boxes'), 'the ledger keeps the arithmetic that produced the move')
+ok(conv.includes('→ 66'), 'and the balance it left behind, in the stocking unit')
+
 // Stock must never go negative.
 await p.getByRole('button',{name:'Stock'}).click(); await p.waitForTimeout(500)
 const folder = p.locator('li', { hasText: 'Folder, Long' }).first()

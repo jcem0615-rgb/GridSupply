@@ -192,8 +192,16 @@ create table stock_moves (
   id uuid primary key default gen_random_uuid(),
   supplier_id uuid not null references suppliers (id) on delete cascade,
   catalog_item_id uuid not null references catalog_items (id) on delete cascade,
+  -- Signed, and always in the item's own stocking unit; the ledger holds one
+  -- unit or balance_after means nothing.
   qty integer not null,
   balance_after integer not null check (balance_after >= 0),
+  -- What was actually counted, before conversion. Stock arrives in whatever
+  -- the delivery was packed in — ten boxes of twelve reams — and a ledger that
+  -- records only the converted 120 hides the arithmetic behind it.
+  entry_qty integer not null default 0,
+  entry_unit text not null default 'pc',
+  entry_factor integer not null default 1 check (entry_factor >= 1),
   reason text not null check (
     reason in ('received', 'order_accepted', 'order_declined', 'adjustment', 'damaged')
   ),

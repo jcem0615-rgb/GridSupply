@@ -1,7 +1,8 @@
 import { db } from './db/dexie'
 import { put } from './db/repo'
 import { nowIso, uuid } from './ids'
-import type { CatalogItem, Order, Profile, StockMove, StockMoveReason } from '../types'
+import { UNIT_LABEL, UNIT_PLURAL, formatQty } from '../types'
+import type { CatalogItem, ItemUnit, Order, Profile, StockMove, StockMoveReason } from '../types'
 
 export type StockState = 'out' | 'low' | 'ok' | 'untracked'
 
@@ -33,22 +34,61 @@ export const STOCK_LABEL: Record<StockState, string> = {
 }
 
 /**
+ * How a movement was counted before it reached the ledger. Stock arrives in
+ * whatever the delivery was packed in — ten boxes of twelve reams — but the
+ * ledger holds one unit, the item's own, or `balance_after` means nothing.
+ * Omit it and the count is taken as already being in that unit.
+ */
+export interface StockEntry {
+  unit: ItemUnit
+  /** Stocking units in one `unit`. 1 when counting in the item's own unit. */
+  factor: number
+}
+
+/** A plain count, in whatever unit the item is stocked in. */
+export const plainEntry = (item: CatalogItem): StockEntry => ({ unit: item.unit, factor: 1 })
+
+/**
+ * A factor is only meaningful between two different units, and only a whole
+ * number of stocking units fits in a pack — half a ream in a box is a data
+ * entry mistake, not a delivery.
+ */
+export function normaliseEntry(item: CatalogItem, entry: StockEntry): StockEntry {
+  if (entry.unit === item.unit) return plainEntry(item)
+  return { unit: entry.unit, factor: Math.max(1, Math.round(entry.factor)) }
+}
+
+/** "10 Boxes = 120 Reams" — the sentence the adjust form and the ledger show. */
+export function describeEntry(item: CatalogItem, qty: number, entry: StockEntry): string {
+  const e = normaliseEntry(item, entry)
+  const counted = `${Math.abs(qty)} ${Math.abs(qty) === 1 ? UNIT_LABEL[e.unit] : UNIT_PLURAL[e.unit]}`
+  if (e.factor === 1 && e.unit === item.unit) return counted
+  return `${counted} × ${formatQty(e.factor, item.unit)} = ${formatQty(Math.abs(qty) * e.factor, item.unit)}`
+}
+
+/**
  * Applies a signed movement and records it in the ledger.
  *
+ * `qty` is counted in `entry.unit` and converted to the item's stocking unit
+ * before it touches the balance. The ledger keeps both, so a wrong balance is
+ * legible against the entry that produced it rather than silently correct.
+ *
  * The ledger is append-only and each row carries the balance after it, so the
- * history reads without replaying every move — and a wrong balance is visible
- * against the moves that produced it rather than silently correct.
+ * history reads without replaying every move.
  */
 export async function moveStock(
   actor: Profile,
   item: CatalogItem,
   qty: number,
   reason: StockMoveReason,
-  opts: { note?: string; orderId?: string | null } = {},
+  opts: { note?: string; orderId?: string | null; entry?: StockEntry } = {},
 ): Promise<CatalogItem> {
+  const entry = normaliseEntry(item, opts.entry ?? plainEntry(item))
+  const inStockingUnits = qty * entry.factor
+
   /* Stock never goes negative: a ledger that can imply -3 boxes on hand is a
      ledger nobody trusts. */
-  const balance = Math.max(0, item.stock_on_hand + qty)
+  const balance = Math.max(0, item.stock_on_hand + inStockingUnits)
   const applied = balance - item.stock_on_hand
   const updated: CatalogItem = { ...item, stock_on_hand: balance, stock_updated_at: nowIso() }
 
@@ -60,6 +100,9 @@ export async function moveStock(
     catalog_item_id: item.id,
     qty: applied,
     balance_after: balance,
+    entry_qty: qty,
+    entry_unit: entry.unit,
+    entry_factor: entry.factor,
     reason,
     order_id: opts.orderId ?? null,
     note: opts.note ?? '',
@@ -84,9 +127,12 @@ export async function consumeForOrder(actor: Profile, order: Order, direction: 1
     if (!line.catalog_item_id) continue
     const item = await db.catalog_items.get(line.catalog_item_id)
     if (!item) continue
+    /* A catalogued line copies the item's unit in the PR wizard, so an order
+       draw-down is always a plain count — there is nothing to convert. */
     await moveStock(actor, item, direction * line.qty, reason, {
       orderId: order.id,
       note: `${order.po_number ?? order.pr_number} — ${line.name}`,
+      entry: plainEntry(item),
     })
   }
 }

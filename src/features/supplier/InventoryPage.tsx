@@ -8,8 +8,10 @@ import { can } from '../../lib/permissions'
 import {
   STOCK_LABEL,
   STOCK_TONE,
+  describeEntry,
   moveStock,
   movesForSupplier,
+  normaliseEntry,
   stockState,
   type StockState,
 } from '../../lib/inventory'
@@ -17,10 +19,13 @@ import { Badge, Button, Card, Empty, Field, Input, Modal, Select, Stat, Textarea
 import { Pager } from '../../components/Pager'
 import { usePaged } from '../../lib/usePaged'
 import {
+  ALL_UNITS,
   STOCK_REASON_LABEL,
   UNIT_LABEL,
+  UNIT_PLURAL,
   formatQty,
   type CatalogItem,
+  type ItemUnit,
   type StockMoveReason,
 } from '../../types'
 
@@ -40,6 +45,8 @@ export function InventoryPage() {
   const [tab, setTab] = useState<'stock' | 'ledger'>('stock')
   const [adjusting, setAdjusting] = useState<CatalogItem | null>(null)
   const [qty, setQty] = useState('')
+  const [entryUnit, setEntryUnit] = useState<ItemUnit>('pc')
+  const [factor, setFactor] = useState('')
   const [reason, setReason] = useState<StockMoveReason>('received')
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
@@ -68,17 +75,42 @@ export function InventoryPage() {
 
   const canAdjust = can(profile.role, 'catalog.manage')
 
+  /* The item's own unit is the default, because counting in it is the common
+     case and needs no conversion at all. */
+  const openAdjust = (item: CatalogItem) => {
+    setAdjusting(item)
+    setEntryUnit(item.unit)
+    setFactor('')
+    setQty('')
+    setNote('')
+  }
+
+  const converting = !!adjusting && entryUnit !== adjusting.unit
+  const factorN = Number(factor)
+  const entry = adjusting
+    ? normaliseEntry(adjusting, { unit: entryUnit, factor: converting ? factorN : 1 })
+    : null
+  const typed = Number(qty)
+  /* A conversion without a factor is not an adjustment anyone can check, so the
+     form stays disabled until the supplier says how many fit in one. */
+  const ready = !!adjusting && !!typed && (!converting || factorN >= 1)
+
   const submit = async () => {
     if (!adjusting) return
     const n = Number(qty)
     if (!n) return
+    if (converting && !(factorN >= 1)) return
     setBusy(true)
     try {
       /* "Damaged" always removes; the others take the sign the user typed. */
       const signed = reason === 'damaged' ? -Math.abs(n) : n
-      await moveStock(profile, adjusting, signed, reason, { note: note.trim() })
+      await moveStock(profile, adjusting, signed, reason, {
+        note: note.trim(),
+        entry: { unit: entryUnit, factor: converting ? factorN : 1 },
+      })
       setAdjusting(null)
       setQty('')
+      setFactor('')
       setNote('')
     } finally {
       setBusy(false)
@@ -164,7 +196,7 @@ export function InventoryPage() {
                         )}
                       </div>
                       {canAdjust && (
-                        <Button variant="secondary" onClick={() => setAdjusting(i)}>
+                        <Button variant="secondary" onClick={() => openAdjust(i)}>
                           Adjust
                         </Button>
                       )}
@@ -201,6 +233,11 @@ export function InventoryPage() {
                         <p className="truncate text-sm font-semibold text-ink-900">{item?.name ?? 'Removed item'}</p>
                         <p className="truncate text-xs text-ink-400">
                           {STOCK_REASON_LABEL[m.reason]}
+                          {/* A converted entry shows the arithmetic, so a wrong
+                              balance is legible against what was counted. */}
+                          {item && m.entry_factor > 1 &&
+                            ` · ${describeEntry(item, m.entry_qty, { unit: m.entry_unit, factor: m.entry_factor })}`}
+                          {item && m.entry_factor <= 1 && ` · ${formatQty(Math.abs(m.qty), item.unit)}`}
                           {m.note && ` · ${m.note}`}
                         </p>
                         <p className="text-[11px] text-ink-400">
@@ -235,25 +272,77 @@ export function InventoryPage() {
                 ))}
               </Select>
             </Field>
-            <Field
-              label={`Quantity in ${UNIT_LABEL[adjusting.unit].toLowerCase()}`}
-              hint={
-                reason === 'damaged'
-                  ? 'Always removed from stock.'
-                  : 'Use a negative number to remove, e.g. -5.'
-              }
-            >
-              <Input
-                inputMode="numeric"
-                value={qty}
-                onChange={(e) => setQty(e.target.value.replace(/[^\d-]/g, ''))}
-                placeholder="0"
-              />
-            </Field>
+            <div className="grid grid-cols-[1fr_auto] gap-3">
+              <Field
+                label="Quantity"
+                hint={
+                  reason === 'damaged'
+                    ? 'Always removed from stock.'
+                    : 'Use a negative number to remove, e.g. -5.'
+                }
+              >
+                <Input
+                  inputMode="numeric"
+                  aria-label="Quantity"
+                  value={qty}
+                  onChange={(e) => setQty(e.target.value.replace(/[^\d-]/g, ''))}
+                  placeholder="0"
+                />
+              </Field>
+              {/* Stock arrives in whatever the delivery was packed in. Forcing
+                  the supplier to divide it down to the stocking unit in their
+                  head is where miscounts come from. */}
+              <Field label="Counted in">
+                <Select
+                  aria-label="Unit of measure"
+                  value={entryUnit}
+                  onChange={(e) => setEntryUnit(e.target.value as ItemUnit)}
+                >
+                  {ALL_UNITS.map((u) => (
+                    <option key={u} value={u}>
+                      {UNIT_PLURAL[u]}
+                      {u === adjusting.unit ? ' (stocking unit)' : ''}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            </div>
+
+            {converting && (
+              <Field
+                label={`${UNIT_LABEL[adjusting.unit]}s in one ${UNIT_LABEL[entryUnit].toLowerCase()}`}
+                hint={`Stock is counted in ${UNIT_PLURAL[adjusting.unit].toLowerCase()}, so this is how the count converts.`}
+              >
+                <Input
+                  inputMode="numeric"
+                  aria-label="Units per pack"
+                  value={factor}
+                  onChange={(e) => setFactor(e.target.value.replace(/[^\d]/g, ''))}
+                  placeholder="12"
+                />
+              </Field>
+            )}
+
+            {ready && entry && (
+              <p className="glass-quiet rounded-xl px-3 py-2 text-xs text-ink-600">
+                {describeEntry(adjusting, reason === 'damaged' ? -Math.abs(typed) : typed, entry)}
+                {' · on hand becomes '}
+                <span className="font-bold text-ink-900">
+                  {formatQty(
+                    Math.max(
+                      0,
+                      adjusting.stock_on_hand +
+                        (reason === 'damaged' ? -Math.abs(typed) : typed) * entry.factor,
+                    ),
+                    adjusting.unit,
+                  )}
+                </span>
+              </p>
+            )}
             <Field label="Note">
               <Textarea value={note} onChange={(e) => setNote(e.target.value)} className="min-h-16" placeholder="Delivery receipt 1123" />
             </Field>
-            <Button full onClick={submit} disabled={busy || !Number(qty)}>
+            <Button full onClick={submit} disabled={busy || !ready}>
               {busy ? 'Saving…' : 'Record movement'}
             </Button>
           </div>

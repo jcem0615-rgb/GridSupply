@@ -144,6 +144,20 @@ Warm, cozy palette on glassmorphic surfaces. `src/index.css` holds the whole thi
   a supplier who never counted their shelves does not open the app to a wall of red. Stock
   levels are supplier-only in RLS: a school has no business reading how thin a vendor's
   shelves are before negotiating.
+- **Stock is counted in whatever it arrived in, and stored in the item's own unit.** A
+  delivery comes as three packs of six boxes, not as eighteen boxes, and making the
+  supplier do that division in their head is where miscounts come from — so the adjust
+  form carries a unit choice beside the quantity, defaulting to the item's stocking unit.
+  Pick a different one and it asks how many stocking units fit in it, and will not record
+  the movement until you say; a factor is the whole difference between adding 3 and adding
+  18. `qty` and `balance_after` stay in the item's unit — the ledger holds one unit or the
+  balance means nothing — but the move also keeps `entry_qty` / `entry_unit` /
+  `entry_factor`, so the row reads "3 Packs × 6 Boxes = 18 Boxes" and a wrong balance is
+  legible against the arithmetic that produced it rather than being a bare number. Order
+  draw-downs are always plain counts: the PR wizard copies the item's unit onto a
+  catalogued line, so there is nothing to convert. Dexie v10 backfills existing moves as
+  plain counts at a factor of 1, reading the unit off the item rather than leaving it
+  blank.
 - **Long lists are paginated client-side.** `usePaged` + `<Pager>` cover the PR wizard's
   item picker (10/page), the supplier catalog (12/page) and the order lists (15/page).
   Selections in the wizard are keyed by item id, so they survive paging and searching; a
