@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../lib/db/dexie'
 import { put, remove } from '../../lib/db/repo'
@@ -38,9 +39,15 @@ export function TeamPage() {
   const [toDelete, setToDelete] = useState<Profile | null>(null)
   const [busy, setBusy] = useState(false)
 
+  /* The people you manage. Your own account is not one of them — resetting
+     your own password through the admin flow would issue you a temporary one,
+     which is not what "change my password" means. */
   const team = useLiveQuery(
-    () => db.profiles.where('supplier_id').equals(me.supplier_id!).toArray(),
-    [me.supplier_id],
+    async () =>
+      (await db.profiles.where('supplier_id').equals(me.supplier_id!).toArray()).filter(
+        (p) => p.id !== me.id,
+      ),
+    [me.supplier_id, me.id],
     [] as Profile[],
   )
 
@@ -108,7 +115,6 @@ export function TeamPage() {
                   {(['active', 'paused', 'stopped'] as AccountStatus[]).map((s) => (
                     <button
                       key={s}
-                      disabled={p.id === me.id}
                       onClick={() => setStatus(p, s)}
                       className={cx(
                         'rounded-lg px-2 py-1 text-[10px] font-bold uppercase transition disabled:opacity-30',
@@ -126,16 +132,24 @@ export function TeamPage() {
                   <Button variant="ghost" onClick={() => setEditing(p)}>
                     Edit
                   </Button>
-                  {p.id !== me.id && (
-                    <Button variant="ghost" onClick={() => setToDelete(p)}>
-                      Delete
-                    </Button>
-                  )}
+                  <Button variant="ghost" onClick={() => setToDelete(p)}>
+                    Delete
+                  </Button>
                 </div>
               </li>
             ))}
           </ul>
         )}
+      </Card>
+
+      <Card title="Your own account" subtitle={`${me.full_name} · ${ROLE_LABEL[me.role]}`}>
+        <p className="text-xs text-ink-400">
+          Changing your own password does not go through the reset above — that issues a temporary one for someone
+          else. Set yours directly instead.
+        </p>
+        <Link to="/change-password" className="mt-3 inline-flex">
+          <Button variant="secondary">Change my password</Button>
+        </Link>
       </Card>
 
       <p className="text-xs text-ink-400">
@@ -152,11 +166,7 @@ export function TeamPage() {
               <Input type="email" value={editing.email} onChange={(e) => setEditing({ ...editing, email: e.target.value })} />
             </Field>
             <Field label="Role">
-              <Select
-                value={editing.role}
-                disabled={editing.id === me.id}
-                onChange={(e) => setEditing({ ...editing, role: e.target.value as Role })}
-              >
+              <Select value={editing.role} onChange={(e) => setEditing({ ...editing, role: e.target.value as Role })}>
                 {SUPPLIER_ROLES.map((r) => (
                   <option key={r} value={r}>
                     {ROLE_LABEL[r]}

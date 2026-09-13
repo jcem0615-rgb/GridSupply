@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../lib/db/dexie'
 import { put, remove } from '../../lib/db/repo'
@@ -196,7 +197,12 @@ export function AccountsPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-black tracking-tight text-ink-900">Accounts</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {/* Resetting your own password through the admin flow would issue you a
+              temporary one; changing it is a different action. */}
+          <Link to="/change-password">
+            <Button variant="secondary">Change my password</Button>
+          </Link>
           <Button variant="secondary" onClick={() => setConfirmReset(true)}>
             Reset demo data
           </Button>

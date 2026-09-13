@@ -29,8 +29,13 @@ const signOut=async()=>{await p.getByRole('button',{name:'Sign out'}).click();aw
 await signIn(/Dr. Elena Villanueva/, /school/)
 await p.goto(BASE+'/school/team'); await p.waitForTimeout(700)
 ok((await p.locator('body').innerText()).includes('Grace Tolentino'), 'principal sees the school admin')
+ok((await p.locator('section').first().innerText()).includes('Grace Tolentino'), 'admin card lists the admin')
+ok(!(await p.locator('section').first().innerText()).includes('Dr. Elena Villanueva'),
+   'the principal is not listed among the accounts they manage')
+ok((await p.locator('body').innerText()).includes('Change my password'),
+   'the principal has a path to change their own password')
 ok((await p.locator('body').innerText()).includes('already has its admin'), 'one-admin limit is stated')
-ok(await p.getByRole('button',{name:'Add admin'}).isDisabled(), 'Add admin disabled at the limit')
+ok(await p.getByRole('button',{name:'Add admin'}).first().isDisabled(), 'Add admin disabled at the limit')
 await p.screenshot({path:`${O}/team.png`})
 
 // The admin does real work; the principal must see it, attributed.
@@ -89,7 +94,7 @@ await row.getByRole('button',{name:'Delete'}).click()
 await p.getByRole('button',{name:'Remove'}).click(); await p.waitForTimeout(700)
 const after = await p.locator('body').innerText()
 ok(!after.includes('Grace Tolentino'), 'admin removed')
-ok(!(await p.getByRole('button',{name:'Add admin'}).isDisabled()), 'Add admin re-enabled after removal')
+ok(!(await p.getByRole('button',{name:'Add admin'}).first().isDisabled()), 'Add admin re-enabled after removal')
 
 // The deleted admin keeps their name in the trail.
 await p.goto(orderUrl); await p.waitForTimeout(700)

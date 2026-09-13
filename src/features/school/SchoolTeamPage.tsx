@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../lib/db/dexie'
 import { put, remove } from '../../lib/db/repo'
@@ -41,8 +42,14 @@ export function SchoolTeamPage() {
   const [toDelete, setToDelete] = useState<Profile | null>(null)
   const [busy, setBusy] = useState(false)
 
+  /* Only the admin. This page is for managing that account — the Principal
+     looking at a row describing themselves is noise, and their own password is
+     reached through the link below instead. */
   const team = useLiveQuery(
-    () => db.profiles.where('school_id').equals(me.school_id!).toArray(),
+    async () =>
+      (await db.profiles.where('school_id').equals(me.school_id!).toArray()).filter(
+        (p) => p.role === 'school_admin',
+      ),
     [me.school_id],
     [] as Profile[],
   )
@@ -56,7 +63,7 @@ export function SchoolTeamPage() {
     )
   }
 
-  const admins = (team ?? []).filter((p) => p.role === 'school_admin')
+  const admins = team ?? []
   const atLimit = admins.length >= MAX_SCHOOL_ADMINS
   const exists = (id: string) => (team ?? []).some((p) => p.id === id)
 
@@ -75,9 +82,9 @@ export function SchoolTeamPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-black tracking-tight text-ink-900">School accounts</h1>
+          <h1 className="text-xl font-black tracking-tight text-ink-900">Admin account</h1>
           <p className="text-sm text-ink-400">
-            You, plus up to {MAX_SCHOOL_ADMINS} admin who works alongside you.
+            Up to {MAX_SCHOOL_ADMINS} admin who works alongside you.
           </p>
         </div>
         <Button onClick={() => setEditing(blankAdmin(me.school_id!))} disabled={atLimit}>
@@ -91,14 +98,20 @@ export function SchoolTeamPage() {
         </p>
       )}
 
-      <Card title="Accounts" subtitle="Both accounts see the same requests, orders and vouchers">
+      <Card title="Admin" subtitle="They see the same requests, orders and vouchers you do">
+        {admins.length === 0 ? (
+          <Empty
+            title="No admin yet"
+            hint="Add one and they can raise requests, approve them, receive deliveries and issue vouchers alongside you."
+            action={<Button onClick={() => setEditing(blankAdmin(me.school_id!))}>Add admin</Button>}
+          />
+        ) : (
         <ul className="divide-y divide-[rgba(120,80,50,0.1)]">
-          {(team ?? []).map((p) => (
+          {admins.map((p) => (
             <li key={p.id} className="flex flex-wrap items-center gap-3 py-3">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold text-ink-900">
                   {p.full_name}
-                  {p.id === me.id && <span className="ml-2 text-[10px] font-bold uppercase text-ink-400">you</span>}
                   {p.must_change_password && (
                     <span className="ml-2 rounded-full bg-[rgba(214,158,58,0.22)] px-2 py-0.5 text-[10px] font-bold text-[#7a5310]">
                       must change password
@@ -111,7 +124,7 @@ export function SchoolTeamPage() {
                 </p>
               </div>
               <Badge tone={TONE[p.status]}>{p.status}</Badge>
-              {p.role === 'school_admin' && (
+              {
                 <div className="flex shrink-0 gap-1">
                   {(['active', 'paused', 'stopped'] as AccountStatus[]).map((st) => (
                     <button
@@ -128,7 +141,7 @@ export function SchoolTeamPage() {
                     </button>
                   ))}
                 </div>
-              )}
+              }
               <div className="flex shrink-0 gap-1">
                 <Button variant="secondary" onClick={() => setResetting(p)}>
                   Reset password
@@ -136,15 +149,24 @@ export function SchoolTeamPage() {
                 <Button variant="ghost" onClick={() => setEditing(p)}>
                   Edit
                 </Button>
-                {p.role === 'school_admin' && (
-                  <Button variant="ghost" onClick={() => setToDelete(p)}>
-                    Delete
-                  </Button>
-                )}
+                <Button variant="ghost" onClick={() => setToDelete(p)}>
+                  Delete
+                </Button>
               </div>
             </li>
           ))}
         </ul>
+        )}
+      </Card>
+
+      <Card title="Your own account" subtitle={`${me.full_name} · ${ROLE_LABEL[me.role]}`}>
+        <p className="text-xs text-ink-400">
+          Changing your own password does not go through the reset above — that issues a temporary one for someone
+          else. Set yours directly instead.
+        </p>
+        <Link to="/change-password" className="mt-3 inline-flex">
+          <Button variant="secondary">Change my password</Button>
+        </Link>
       </Card>
 
       <p className="text-xs text-ink-400">

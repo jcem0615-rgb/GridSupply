@@ -158,6 +158,12 @@ Warm, cozy palette on glassmorphic surfaces. `src/index.css` holds the whole thi
   optional QR upload) and suppliers pay into those; nothing about the destination account
   is hardcoded. Payments snapshot `method_label` so history survives a method being
   renamed or deleted. Dexie v3 backfills both for existing browsers.
+- **An account-management page lists the people you manage, never yourself.** The school's
+  page shows the admin, the supplier's shows staff. Resetting your *own* password through
+  those controls would issue you a temporary one and force a change — which is not what
+  "change my password" means — so each portal carries a separate **Change my password**
+  path to `/change-password`. Before this, that route was reachable only by the forced
+  redirect after an admin reset, so nobody could change their password deliberately.
 - **A school is the Principal plus at most one admin.** `school_admin` carries the same
   workflow permissions as `principal`, so the two are interchangeable in the process and
   both see the same requests — but `school.staff` is Principal-only, because an admin able

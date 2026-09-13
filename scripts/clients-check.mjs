@@ -101,8 +101,10 @@ await p.getByRole('button',{name:'Reset password', exact:true}).last().click()
 await p.waitForSelector('text=Temporary password')
 ok(true, 'team: reset password')
 await p.getByRole('button',{name:'Done'}).click(); await p.waitForTimeout(500)
-const own = p.locator('li', { hasText: 'Marites Delos Reyes' }).first()
-ok((await own.locator('button', { hasText: 'Delete' }).count())===0, 'team: owner cannot delete themselves')
+ok((await p.locator('li', { hasText: 'Marites Delos Reyes' }).count())===0,
+   'team: the owner is not listed among the staff they manage')
+ok((await p.locator('body').innerText()).includes('Change my password'),
+   'team: the owner has a path to change their own password')
 await tRow.getByRole('button',{name:'Delete'}).click()
 await p.getByRole('button',{name:'Remove'}).click(); await p.waitForTimeout(800)
 ok(!(await p.locator('body').innerText()).includes('Rico Aquino'), 'team: delete')
