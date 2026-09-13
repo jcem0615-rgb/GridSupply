@@ -11,7 +11,7 @@ import { PrintDoc, DOC_TITLE } from '../print/PrintDocs'
 import { getTaxConfig } from '../../lib/db/seed'
 import type { Order, OrderLine, PrintTemplate } from '../../types'
 
-const DOC_TYPES: PrintTemplate['doc_type'][] = ['PR', 'PO', 'IAR', 'DV', 'BIR2307']
+const DOC_TYPES: PrintTemplate['doc_type'][] = ['PR', 'RFQ', 'PO', 'IAR', 'DV', 'BIR2307']
 
 const defaults = (schoolId: string, docType: PrintTemplate['doc_type'], headerLines: string[]): PrintTemplate => ({
   id: uuid(),

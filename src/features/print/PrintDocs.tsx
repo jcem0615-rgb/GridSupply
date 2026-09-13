@@ -11,10 +11,11 @@ import type {
   TaxConfig,
 } from '../../types'
 
-export type DocType = 'PR' | 'PO' | 'IAR' | 'DV' | 'BIR2307'
+export type DocType = 'PR' | 'RFQ' | 'PO' | 'IAR' | 'DV' | 'BIR2307'
 
 export const DOC_TITLE: Record<DocType, string> = {
   PR: 'Purchase Request',
+  RFQ: 'Request for Quotation',
   PO: 'Purchase Order',
   IAR: 'Inspection & Acceptance Report',
   DV: 'Disbursement Voucher',
@@ -31,6 +32,20 @@ interface DocProps {
   template?: PrintTemplate | null
   logo?: Attachment | null
   checkPhoto?: Attachment | null
+}
+
+/**
+ * One RFQ per purchase request, so the number is derived from the PR rather
+ * than stored. Assigning a separate sequence would mean writing a document
+ * number to the record merely because someone previewed the page.
+ */
+export const rfqNumber = (order: Order) => order.pr_number.replace(/^PR-/, 'RFQ-')
+
+/** Seven calendar days from approval is the usual window for small value procurement. */
+function quotationDue(order: Order) {
+  const from = new Date(order.approved_at ?? order.created_at)
+  from.setDate(from.getDate() + 7)
+  return formatDate(from.toISOString())
 }
 
 const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
@@ -88,7 +103,20 @@ function Signatories({ template, fallback }: { template?: PrintTemplate | null; 
   )
 }
 
-function LineTable({ lines, showPrices = true }: { lines: OrderLine[]; showPrices?: boolean }) {
+/**
+ * `blankPrices` rules the price columns but leaves them empty. An RFQ asks the
+ * supplier to quote, so printing the catalogue price we already hold would
+ * defeat the purpose of soliciting one.
+ */
+function LineTable({
+  lines,
+  showPrices = true,
+  blankPrices = false,
+}: {
+  lines: OrderLine[]
+  showPrices?: boolean
+  blankPrices?: boolean
+}) {
   return (
     <table className="w-full border-collapse text-[11px]">
       <thead>
@@ -109,8 +137,16 @@ function LineTable({ lines, showPrices = true }: { lines: OrderLine[]; showPrice
             </td>
             <td className="border border-neutral-400 px-2 py-1 text-center">{UNIT_LABEL[l.unit]}</td>
             <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">{l.qty}</td>
-            {showPrices && <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">{peso(l.unit_price)}</td>}
-            {showPrices && <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">{peso(l.line_total)}</td>}
+            {showPrices && (
+              <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">
+                {blankPrices ? '\u00a0' : peso(l.unit_price)}
+              </td>
+            )}
+            {showPrices && (
+              <td className="border border-neutral-400 px-2 py-1 text-right tabular-nums">
+                {blankPrices ? '\u00a0' : peso(l.line_total)}
+              </td>
+            )}
           </tr>
         ))}
         {Array.from({ length: Math.max(0, 5 - lines.length) }).map((_, i) => (
@@ -164,6 +200,77 @@ export function PrintDoc(props: DocProps) {
             template={template}
             fallback={[
               { label: 'Requested by', name: '', title: 'Property Custodian' },
+              { label: 'Approved by', name: '', title: 'School Principal' },
+            ]}
+          />
+        </>
+      )}
+
+      {type === 'RFQ' && (
+        <>
+          <div className="mb-3 grid grid-cols-2 gap-4">
+            <div>
+              <Row label="RFQ No." value={rfqNumber(order)} />
+              <Row label="Date" value={formatDate(order.approved_at ?? order.created_at)} />
+              <Row label="PR No." value={order.pr_number} />
+            </div>
+            <div>
+              <Row label="Mode" value="Small Value Procurement" />
+              <Row label="Fund Source" value={order.fund_source} />
+              <Row label="Quotation due" value={quotationDue(order)} />
+            </div>
+          </div>
+
+          <div className="mb-3 border border-neutral-400 p-2">
+            <p className="mb-1 text-[10px] font-bold uppercase">To</p>
+            <Row label="Company" value={supplier?.name ?? '__________________________'} />
+            <Row label="Address" value={supplier?.address ?? '__________________________'} />
+            <Row label="TIN" value={supplier?.tin ?? '__________________'} />
+          </div>
+
+          <p className="mb-2 text-[11px]">
+            Sir/Madam: Please quote your lowest price on the item(s) listed below, stating the shortest time of
+            delivery, and submit your quotation duly signed by you or your authorised representative on or before{' '}
+            <span className="font-bold">{quotationDue(order)}</span>.
+          </p>
+
+          <LineTable lines={lines} blankPrices />
+
+          <div className="mt-3 border border-neutral-400 p-2 text-[10px]">
+            <p className="font-bold uppercase">Terms and conditions</p>
+            <ol className="mt-1 list-decimal space-y-0.5 pl-4">
+              <li>All entries must be typewritten or legibly written.</li>
+              <li>Price quotation must be inclusive of all applicable taxes and delivery charges.</li>
+              <li>Quotations exceeding the approved budget for the contract shall be rejected.</li>
+              <li>Award shall be made to the lowest quotation meeting the specifications above.</li>
+              <li>Price validity shall be for a period of thirty (30) calendar days.</li>
+            </ol>
+          </div>
+
+          <div className="mt-3 border border-neutral-400 p-2">
+            <p className="text-[10px] font-bold uppercase">Supplier's quotation</p>
+            <p className="mt-1 text-[10px]">
+              I hereby certify that the above quotation is true and correct, and that the prices offered are my
+              lowest.
+            </p>
+            <div className="mt-6 grid grid-cols-2 gap-8">
+              <div>
+                <p className="border-b border-neutral-900 pb-0.5">&nbsp;</p>
+                <p className="text-center text-[9px] text-neutral-500">
+                  Printed name &amp; signature of authorised representative
+                </p>
+              </div>
+              <div>
+                <p className="border-b border-neutral-900 pb-0.5">&nbsp;</p>
+                <p className="text-center text-[9px] text-neutral-500">Date</p>
+              </div>
+            </div>
+          </div>
+
+          <Signatories
+            template={template}
+            fallback={[
+              { label: 'Requested by', name: '', title: 'BAC Chairperson' },
               { label: 'Approved by', name: '', title: 'School Principal' },
             ]}
           />

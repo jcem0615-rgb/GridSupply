@@ -15,6 +15,25 @@ for each transition is in `src/lib/permissions.ts`.
 | 8 | `dv_issued` | Principal | DV generated with the withholding breakdown |
 | 9 | `paid` → `archived` | Principal | Cheque recorded and photographed, BIR 2307 issued, transaction archived |
 
+## Documents produced along the way
+| Document | Available from | Notes |
+| --- | --- | --- |
+| Purchase Request | `draft` | The request itself |
+| **Request for Quotation** | `pr_approved` | Solicits the supplier's price; the price columns print **blank** |
+| Purchase Order | `po_issued` | The commitment to buy |
+| Inspection & Acceptance Report | `delivered` | Goods received and accepted |
+| Disbursement Voucher | `dv_issued` | With the withholding breakdown |
+| BIR Form 2307 | `paid` | Certificate of tax withheld |
+
+The RFQ deliberately rules its price columns and leaves them empty. Printing the catalogue
+price the platform already holds would defeat the point of asking a supplier to quote. It
+carries the standard small-value-procurement terms and a block for the supplier to sign.
+
+Its number is **derived** from the purchase request (`PR-2026-09-0007` becomes
+`RFQ-2026-09-0007`) rather than stored. There is one RFQ per request, and assigning a
+separate sequence would mean writing a document number to the record merely because
+somebody opened the preview.
+
 ## Payment is by cheque, and only by cheque
 A DepEd disbursement is released as a cheque against the Disbursement Voucher. There is no
 cash, transfer or e-wallet path in the order workflow, and none should be added — the

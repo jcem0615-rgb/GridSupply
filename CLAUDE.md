@@ -139,6 +139,13 @@ Warm, cozy palette on glassmorphic surfaces. `src/index.css` holds the whole thi
   "Selected (n)" filter lets a buyer review picks without hunting pages. Server-side
   paging becomes worthwhile only once a tenant's catalog stops fitting in IndexedDB, which
   the offline layer requires it to do anyway.
+- **The RFQ prints its price columns blank.** An RFQ asks a supplier to quote; printing
+  the catalogue price the platform already holds would defeat the point of soliciting one.
+  Its number is derived from the purchase request (`PR-…` becomes `RFQ-…`) rather than
+  stored — there is one RFQ per request, and a separate sequence would mean writing a
+  document number to the record merely because somebody opened a preview. Available from
+  `pr_approved`, since you cannot solicit quotes on a request nobody approved. See
+  `docs/03`.
 - **Order payment is cheque-only, by design.** A DepEd disbursement is released as a
   cheque against the DV; there is no cash, transfer or e-wallet path in the workflow and
   none should be added. The school captures the cheque image and **both parties download

@@ -328,7 +328,7 @@ create index on supplier_clients (supplier_id);
 create table print_templates (
   id uuid primary key default gen_random_uuid(),
   school_id uuid not null references schools (id) on delete cascade,
-  doc_type text not null check (doc_type in ('PR', 'PO', 'IAR', 'DV', 'BIR2307')),
+  doc_type text not null check (doc_type in ('PR', 'RFQ', 'PO', 'IAR', 'DV', 'BIR2307')),
   header_left_path text,
   header_right_path text,
   header_lines text[] not null default '{}',

@@ -24,6 +24,8 @@ function availableDocs(status: OrderStatus): DocType[] {
   const docs: DocType[] = ['PR']
   const i = ORDER_FLOW.indexOf(status)
   const at = (s: OrderStatus) => i >= ORDER_FLOW.indexOf(s)
+  /* Quotes are solicited once the request is approved and before the PO. */
+  if (at('pr_approved')) docs.push('RFQ')
   if (at('po_issued')) docs.push('PO')
   if (at('delivered')) docs.push('IAR')
   if (at('dv_issued')) docs.push('DV')

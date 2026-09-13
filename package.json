@@ -20,7 +20,8 @@
     "cheque-check": "node scripts/cheque-check.mjs",
     "vat-check": "node scripts/vat-check.mjs",
     "school-check": "node scripts/school-check.mjs",
-    "inventory-check": "node scripts/inventory-check.mjs"
+    "inventory-check": "node scripts/inventory-check.mjs",
+    "rfq-check": "node scripts/rfq-check.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

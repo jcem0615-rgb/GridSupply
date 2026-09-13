@@ -414,7 +414,7 @@ export interface BrandingSettings {
 export interface PrintTemplate {
   id: string
   school_id: string
-  doc_type: 'PR' | 'PO' | 'IAR' | 'DV' | 'BIR2307'
+  doc_type: 'PR' | 'RFQ' | 'PO' | 'IAR' | 'DV' | 'BIR2307'
   header_left_attachment_id: string | null
   header_right_attachment_id: string | null
   header_lines: string[]

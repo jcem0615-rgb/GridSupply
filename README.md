@@ -21,7 +21,7 @@ Try the full loop in about two minutes:
 2. → issue Purchase Order
 3. **Marites Delos Reyes** (Supplier) → accept → dispatch
 4. **Dr. Elena Villanueva** → receive & sign the IAR → generate DV → record cheque → issue BIR 2307
-5. Open the **Documents** tab at any point to print the PR, PO, IAR, DV or 2307
+5. Open the **Documents** tab at any point to print the PR, RFQ, PO, IAR, DV or 2307
 
 The school side is one Principal account. The Property Custodian, BAC Chairperson and
 Disbursing Officer still appear on the printed documents as signatories — configured per
@@ -86,13 +86,14 @@ docs/           01–09, read in order
 | `npm run vat-check` | Verify the VAT and non-VAT tax branches, DV and BIR 2307 |
 | `npm run school-check` | Verify the school admin account, its limit and action attribution |
 | `npm run inventory-check` | Verify units of measure and the supplier stock ledger |
+| `npm run rfq-check` | Verify the Request for Quotation document |
 
 Both browser checks need a **production** build served by `preview` — the service worker
 does not register in dev:
 
 ```bash
 npm run build && npm run preview &
-npm run smoke && npm run pwa-check && npm run auth-check && npm run chat-check && npm run clients-check && npm run cheque-check && npm run vat-check && npm run school-check && npm run inventory-check
+npm run smoke && npm run pwa-check && npm run auth-check && npm run chat-check && npm run clients-check && npm run cheque-check && npm run vat-check && npm run school-check && npm run inventory-check && npm run rfq-check
 ```
 
 ## Deployment

@@ -87,8 +87,12 @@ export function OrderActions({ order }: { order: Order }) {
         key="accept"
         onClick={() =>
           run(async () => {
-            await acceptPO(order.id, profile)
+            /* Reserve the stock first. If the ledger write fails the order is
+               not left marked accepted against stock that never moved — and it
+               means the status flip is the last write, so nothing lands after
+               the UI has already said "PO Accepted". */
             await consumeForOrder(profile, order, -1)
+            await acceptPO(order.id, profile)
           })
         }
         disabled={busy}
